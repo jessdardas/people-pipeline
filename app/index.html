@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!--
+    This is the page skeleton. build.js replaces every "@include" line with that file
+    (css → <style>, js → <script>, html → pasted as is) and writes dist/Index.html.
+    Every part of the screen has its own folder in app/ - see docs/SCREEN-GUIDE.md.
+  -->
+
+  <!-- Styles -->
+  <!-- @include core/base.css -->
+  <!-- @include header/header.css -->
+  <!-- @include search/search.css -->
+  <!-- @include filters/filters.css -->
+  <!-- @include matrix/matrix.css -->
+  <!-- @include table/table.css -->
+  <!-- @include details/details.css -->
+</head>
+<body>
+  <!-- Top of the page: logo, refresh info, search, service units, pipelines, tabs, filters -->
+  <!-- @include header/header.html -->
+
+  <!-- The matrix and the account table are drawn in here by matrix/matrix.js and table/table.js -->
+  <main id="main">
+    <div class="loading"><span class="spinner"></span>Reading the source file…</div>
+  </main>
+
+  <!-- Account details side panel -->
+  <!-- @include details/details.html -->
+
+  <!-- Small message at the bottom of the screen (toast() in core/helpers.js) -->
+  <div class="toast" id="toast"></div>
+
+  <!-- Scripts: the order matters - core/main.js must stay last (it starts the app) -->
+  <!-- @include core/config.js -->
+  <!-- @include core/helpers.js -->
+  <!-- @include core/data.js -->
+  <!-- @include filters/filters.js -->
+  <!-- @include matrix/maps.js -->
+  <!-- @include header/header.js -->
+  <!-- @include filters/filter-panel.js -->
+  <!-- @include matrix/matrix.js -->
+  <!-- @include table/table.js -->
+  <!-- @include details/details.js -->
+  <!-- @include search/search.js -->
+  <!-- @include export/export.js -->
+  <!-- @include core/main.js -->
+</body>
+</html>

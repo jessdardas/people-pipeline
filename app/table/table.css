@@ -1,0 +1,193 @@
+/* ==========================================================================
+   TABLE: the list of accounts under the matrix (and the tables in the details panel)
+   Filled by table/table.js (listBlock, renderList, openHead)
+   ========================================================================== */
+
+/* the white card around it */
+.inl {
+  position: relative;
+  margin-top: 22px;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: 16px 20px 18px;
+}
+
+/* card header: "123 accounts" + search + Excel / PDF + × */
+.inh {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px 20px;
+  flex-wrap: wrap;
+  padding-bottom: 12px;
+}
+.inh h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+}
+.dtools {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.dtools input {
+  width: 240px;
+  border: 1.5px solid transparent;
+  background: var(--soft);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 12.5px;
+  outline: none;
+}
+.dtools input:focus {
+  border-color: var(--accent);
+  background: var(--surface);
+}
+.x2 {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--text-faint);
+  margin-left: 4px;
+}
+.x2:hover {
+  background: var(--soft);
+  color: var(--text);
+}
+
+/* the table itself */
+.tw {
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+table.tb {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 12.5px;
+}
+.tb th {
+  text-align: left;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-soft);
+  background: var(--soft);
+  padding: 9px 12px;
+  white-space: nowrap;
+  cursor: pointer;
+  position: sticky;
+  top: 0;
+}
+.tb th:hover,
+.tb th.s {
+  color: var(--accent); /* sorted or filtered column */
+}
+.tb td {
+  padding: 8px 12px;
+  border-top: 1px solid var(--soft);
+  white-space: nowrap;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tb td b {
+  font-weight: 600;
+}
+.tb tbody tr {
+  cursor: pointer;
+}
+.tb tbody tr:nth-child(even) td {
+  background: #fcfbff;
+}
+.tb tbody tr:hover td {
+  background: var(--accent-soft);
+}
+.tb td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+/* the # counter column */
+.tb .cnt {
+  width: 1%;
+  text-align: right;
+  color: var(--text-faint);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  padding-right: 4px;
+  cursor: default;
+}
+.tb th.cnt:hover {
+  color: var(--text-soft);
+}
+/* the row of an account found with search */
+.tb tr.hl td {
+  background: #fff6cf !important;
+}
+.fdot {
+  font-style: normal;
+  font-size: 8px;
+  vertical-align: middle;
+  color: var(--pop);
+}
+.nomatch {
+  padding: 12px 4px;
+}
+
+/* "Show more (… left)" */
+.more {
+  display: block;
+  margin: 14px auto 0;
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 18px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-soft);
+}
+.more:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* menu under a column title: sort + filter by value */
+.hpop {
+  position: absolute;
+  z-index: 45;
+  width: 290px;
+  max-height: 430px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  display: none;
+  flex-direction: column;
+}
+.hpop.open {
+  display: flex;
+}
+.hp-s {
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  border-bottom: 1px solid var(--line);
+}
+.hp-s button {
+  text-align: left;
+  padding: 7px 12px;
+  font-size: 12.5px;
+  border-radius: var(--radius);
+}
+.hp-s button:hover {
+  background: var(--soft);
+}
+.hpop .fp-list {
+  max-height: 220px;
+}
+.hpop .fp-f {
+  grid-column: auto;
+}

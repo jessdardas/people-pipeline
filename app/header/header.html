@@ -1,0 +1,30 @@
+<header class="top">
+  <div class="logo">
+    <span class="logo-mark"></span>
+    <span class="logo-name">PSLAB</span>
+    <span class="logo-app">People Pipeline</span>
+  </div>
+  <!-- "Last refreshed …" + refresh button, filled by renderRefresh() in header/header.js -->
+  <div class="rf" id="rf"></div>
+  <!-- Search box, see search/ -->
+  <div class="gs">
+    <svg class="gs-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+    <input id="gq" placeholder="Search an account…" autocomplete="off" oninput="gSearch()" onkeydown="gKey(event)" onfocus="gSearch()">
+    <div class="gres" id="gres"></div>
+  </div>
+</header>
+
+<!-- Service unit buttons (left) and the pipeline menu (right), filled by renderUnits() in header/header.js -->
+<div class="bar">
+  <div class="units" id="units"></div>
+  <div class="pipes" id="pipes"></div>
+</div>
+
+<!-- Map tabs (renderUnits()) and the Filters button + panel (filters/filter-panel.js) -->
+<nav class="nav">
+  <div class="tabs" id="tabs"></div>
+  <div class="fwrap">
+    <div id="fbtn"></div>
+    <div class="fpanel" id="fpanel"></div>
+  </div>
+</nav>

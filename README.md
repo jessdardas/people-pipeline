@@ -1,56 +1,58 @@
 # People Pipeline
 
-A Google Apps Script web app for PSLAB. It reads the **"people pipeline.xlsx"** export from Google Drive and shows every account on four "maps" (matrices), with filters, search, account details and Excel / PDF export.
+A Google Apps Script web app for PSLAB. It reads the **"people pipeline.xlsx"** export from Google Drive and shows every account on four "maps" (matrices), with filters, search, account details and Excel / PDF export. It is **read only**: it never changes the Drive file.
 
-The app is **read only**. It never changes the Drive file, it only reads it every time the page loads (and checks for a new version every 10 minutes).
+![Main screen](docs/images/1-main.png)
 
-> **Where does it run?** GitHub only *stores* the code and its history. The app itself runs on **Google Apps Script**, because it needs Google Drive. You edit the code here, then send it to Apps Script (see [docs/SETUP.md](docs/SETUP.md)).
+## Folders
 
-## The files
+Every part of the screen has its own folder in `app/`, containing its `.html` (if any), `.css` and `.js`:
 
-Each file is one piece of the app:
+```
+app/
+  index.html        page skeleton: lists every file below, in order
+  core/             base.css (colours, fonts, buttons) · config.js (settings) · helpers.js · data.js · main.js (start + refresh)
+  header/           header.html · header.css · header.js (logo, service units, pipelines, tabs)
+  search/           search.css · search.js (search box + results)
+  filters/          filters.css · filters.js (filter rules) · filter-panel.js (the Filters panel)
+  matrix/           matrix.css · maps.js (the 4 maps: rows, columns) · matrix.js (draws the grid)
+  table/            table.css · table.js (account table under the matrix)
+  details/          details.html · details.css · details.js (account side panel)
+  export/           export.js (Excel / PDF)
+server/             Code.js (reads Drive, links the sheets) · XlsxReader.js (reads the .xlsx)
+appsscript.json     Apps Script settings (time zone, web app access)
+build.js            puts app/ together into dist/Index.html for Apps Script
+docs/               guides (below)
+```
 
-| File | What it does |
-|---|---|
-| **Server (runs at Google)** | |
-| [`Code.js`](Code.js) | Opens the web page, finds the Drive file, links all sheets on `accountid` and sends the data to the page. **The Drive file name / id are at the top.** |
-| [`XlsxReader.js`](XlsxReader.js) | Reads the `.xlsx` file (it is a zip of XML files) into rows. |
-| [`appsscript.json`](appsscript.json) | Apps Script project settings (time zone, runtime). |
-| **Page layout** | |
-| [`Index.html`](Index.html) | The page skeleton: header, tabs, main area, side panel. Pulls in all files below. |
-| **Styles (how it looks)** | |
-| [`css_base.html`](css_base.html) | **Colours** and fonts. |
-| [`css_header.html`](css_header.html) | Logo, search box, service unit buttons, pipeline menu, tabs, filter panel. |
-| [`css_matrix.html`](css_matrix.html) | The main area and the coloured matrix. |
-| [`css_table.html`](css_table.html) | The account table under the matrix. |
-| [`css_drawer.html`](css_drawer.html) | The account details side panel, the toast message, mobile layout. |
-| **Scripts (what it does)** | |
-| [`js_config.html`](js_config.html) | **Settings you'll change most**: service units, groups, pipelines, phases, value buckets. |
-| [`js_helpers.html`](js_helpers.html) | Small tools: formatting dates, money, labels. |
-| [`js_data.html`](js_data.html) | Turns the server data into one object per account. |
-| [`js_filters.html`](js_filters.html) | The filter list and the rule that decides if an account is shown. |
-| [`js_maps.html`](js_maps.html) | **The 4 maps**: their rows, columns and where each account lands. |
-| [`js_topbar.html`](js_topbar.html) | Refresh info, service unit buttons, pipeline menu, tabs. |
-| [`js_filter_panel.html`](js_filter_panel.html) | The "Filters" button and its panel. |
-| [`js_matrix.html`](js_matrix.html) | Draws the matrix. |
-| [`js_table.html`](js_table.html) | The account table: sorting, column filters, "show more". |
-| [`js_details.html`](js_details.html) | The account details side panel. |
-| [`js_search.html`](js_search.html) | The search box and "show on map". |
-| [`js_export.html`](js_export.html) | Excel and PDF export. |
-| [`js_main.html`](js_main.html) | Loads the data, refresh and auto refresh. Starts the app, so it **must stay last** in `Index.html`. |
+**[docs/SCREEN-GUIDE.md](docs/SCREEN-GUIDE.md) shows every item on the screen and exactly which file and CSS class controls it.**
+
+## Working on it
+
+```bash
+git pull          # get the latest version
+npm run push      # build + send to Apps Script   (PowerShell blocked? use: npm.cmd run push)
+```
+
+Then check it in Apps Script with **Deploy → Test deployments**, and publish with **Deploy → Manage deployments → ✏️ → New version**.
+More in [docs/SETUP.md](docs/SETUP.md).
 
 ## Quick "where do I change…"
 
-- **Add a service unit / change the button order** → `UNIT_ORDER` in `js_config.html`
-- **Rename a pipeline or change its description** → `PIPES` in `js_config.html`
-- **Change the rows or columns of a map** → `MAPS` in `js_maps.html`
-- **Add a filter** → `FDEF` in `js_filters.html` (and the value in `a.fv` in `js_data.html`)
-- **Add a column to the account table** → `TCOLS` in `js_table.html`
-- **Change colours** → `:root` in `css_base.html`
-- **Change the columns in the Excel / PDF export** → `expRecord` and `PDF_COLS` in `js_export.html`
-- **Use another Drive file** → `SOURCE_FILE_NAME` / `SOURCE_FILE_ID` in `Code.js`
+| Change | File |
+|---|---|
+| Colours, font, rounding | `app/core/base.css` (top) |
+| Service units, groups, pipelines, value buckets | `app/core/config.js` |
+| Rows / columns of a map | `MAPS` in `app/matrix/maps.js` |
+| Matrix look (cells, spacing, titles) | `app/matrix/matrix.css` |
+| Columns of the account table | `TCOLS` in `app/table/table.js` |
+| Lines in the account details overview | `openDetail()` in `app/details/details.js` |
+| Filters in the panel | `FDEF` in `app/filters/filters.js` |
+| Excel / PDF columns | `expRecord()` / `PDF_COLS` in `app/export/export.js` |
+| Which Drive file is read | `SOURCE_FILE_NAME` / `SOURCE_FILE_ID` in `server/Code.js` |
 
-## More
+## Docs
 
-- [docs/SETUP.md](docs/SETUP.md): how to get the code from GitHub into Apps Script and publish it
-- [docs/HOW-IT-WORKS.md](docs/HOW-IT-WORKS.md): how the code works, step by step
+- [docs/SCREEN-GUIDE.md](docs/SCREEN-GUIDE.md): every item on the screen and where to change it
+- [docs/SETUP.md](docs/SETUP.md): VS Code, GitHub and Apps Script, step by step
+- [docs/HOW-IT-WORKS.md](docs/HOW-IT-WORKS.md): how the code works

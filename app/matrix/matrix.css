@@ -1,0 +1,171 @@
+/* ==========================================================================
+   MATRIX: title of the map + the coloured grid of numbers
+   Filled by matrix/matrix.js (render). Rows/columns of each map: matrix/maps.js
+   The heat colour of the cells is --heat-rgb in core/base.css
+   ========================================================================== */
+
+/* map title ("Current pipeline") + selection text under it */
+.head {
+  margin-bottom: 16px;
+}
+h1 {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+/* the white card around the grid */
+.matrix {
+  overflow: auto;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: 14px 18px 10px 10px;
+}
+
+table.grid {
+  border-collapse: separate;
+  border-spacing: 4px; /* the gap between the cells */
+  width: 100%;
+}
+.grid th,
+.grid td {
+  padding: 0;
+}
+
+/* column titles (P0, P1 … / 0–6 months …) */
+.grid th.col {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-soft);
+  padding: 6px 4px;
+  text-align: center;
+}
+
+/* the axis names ("Project phase (latest) →", "Last meeting ↓") */
+.grid th.xl {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  padding: 2px 4px;
+  text-align: center;
+  white-space: nowrap;
+}
+.grid th.yl {
+  width: 22px;
+  vertical-align: middle;
+}
+.grid th.yl div {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin: auto;
+}
+
+/* row titles (< 6 months, 0–3 months …). width 1% = only as wide as the longest title */
+.grid th.row {
+  width: 1%;
+  white-space: nowrap;
+  text-align: left;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 0 10px 0 4px; /* space between the row titles and the cells */
+  height: 56px;
+}
+.grid th.row small {
+  display: block;
+  color: var(--text-faint);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* one cell with a number */
+.grid td.c {
+  height: 56px;
+  min-width: 64px;
+  text-align: center;
+  border-radius: var(--radius);
+  position: relative;
+  transition:
+    transform 0.12s,
+    box-shadow 0.12s;
+}
+.grid td.c button {
+  width: 100%;
+  height: 100%;
+  min-height: 56px;
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  border-radius: var(--radius);
+}
+.grid td.c:not(.zero):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(var(--heat-rgb), 0.25);
+}
+/* the cell whose accounts are shown below */
+.grid td.c.sel {
+  box-shadow: inset 0 0 0 3px var(--pop);
+}
+/* a cell with no accounts */
+.grid td.zero {
+  color: var(--text-faint);
+  background: transparent;
+  border: 1.5px dashed var(--line);
+  font-size: 12px;
+}
+
+/* totals: last column and last row */
+.grid td.tot,
+.grid th.tot {
+  font-size: 12px;
+  color: var(--text-soft);
+  text-align: center;
+  padding: 0 10px;
+  white-space: nowrap;
+  font-weight: 500;
+  width: 70px;
+  font-variant-numeric: tabular-nums;
+}
+.grid th.tot {
+  font-size: 11.5px;
+  font-weight: 600;
+}
+.grid tr.sum th,
+.grid tr.sum td {
+  height: 38px;
+  border-top: 1.5px solid var(--line);
+}
+.grid tr.sum th {
+  text-align: left;
+  font-weight: 600;
+  font-size: 12.5px;
+  padding: 0 10px 0 4px;
+}
+.grid td.grand b {
+  color: var(--accent);
+  font-weight: 800;
+  font-size: 14px;
+}
+
+/* the yellow glow on the cell of an account found with search / "Show on map" */
+.grid td.c.hl {
+  box-shadow:
+    0 0 0 3px var(--found),
+    0 0 22px 4px rgba(255, 210, 63, 0.8) !important;
+  animation: glow 1s ease-in-out 5;
+}
+@keyframes glow {
+  50% {
+    box-shadow:
+      0 0 0 3px var(--found),
+      0 0 6px 1px rgba(255, 210, 63, 0.4);
+  }
+}

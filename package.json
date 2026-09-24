@@ -1,0 +1,9 @@
+{
+  "name": "people-pipeline",
+  "private": true,
+  "description": "PSLAB People Pipeline - Google Apps Script web app",
+  "scripts": {
+    "build": "node build.js",
+    "push": "node build.js && clasp push"
+  }
+}

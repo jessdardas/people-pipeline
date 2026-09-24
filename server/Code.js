@@ -12,17 +12,12 @@
 const SOURCE_FILE_ID = '1dhU0tMGZQL3n8Jfn6LOSfkcsksnrYRKt'; // "people pipeline.xlsx" in Drive (fallback)
 const SOURCE_FILE_NAME = 'people pipeline.xlsx'; // newest Drive file with this name is used
 
+/** Opens the web page. Index.html is built from the app/ folder by build.js (npm run build). */
 function doGet() {
-  return HtmlService.createTemplateFromFile('Index')
-    .evaluate()
+  return HtmlService.createHtmlOutputFromFile('Index')
     .setTitle('People Pipeline')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
-}
-
-/** Pastes another project file into the page: <?!= include('css_base'); ?> in Index.html. */
-function include(name) {
-  return HtmlService.createHtmlOutputFromFile(name).getContent();
 }
 
 function hKey_(s) {

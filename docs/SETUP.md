@@ -1,26 +1,30 @@
 # Setup: VS Code + GitHub + Apps Script
 
-This folder is linked to the Apps Script project by `.clasp.json` (the `scriptId` in it is the project's Script ID, from Apps Script → Project Settings → IDs).
+```
+edit app/ or server/ in VS Code
+   ├─► npm run push        build.js puts app/ together into dist/, then clasp sends dist/ to Apps Script
+   │      └─► Deploy → Test deployments   check it (only you)
+   │      └─► Deploy → Manage deployments → New version   everyone sees it (same URL)
+   └─► commit + push       GitHub keeps every version
+```
 
-```
-edit in VS Code  ──►  commit + push (GitHub keeps the history)
-                 ──►  clasp push (sends the files to Apps Script)  ──►  Deploy → new version (users see it)
-```
+`.clasp.json` links this folder to the Apps Script project (`scriptId` = Apps Script → Project Settings → Script ID; `rootDir: dist` = send the built files).
 
 ## Every time you change something
 
 In the VS Code terminal (**Terminal → New Terminal**), inside this folder:
 
 ```bash
-git pull            # get the latest version from GitHub (e.g. changes made by Claude)
-clasp push          # send all files to Apps Script
+git pull            # get the latest version (e.g. changes made by Claude)
+npm run push        # build + clasp push
 ```
 
-Then check it with **Deploy → Test deployments** (a private link that always runs the latest code).
-When it looks good, publish it: **Deploy → Manage deployments →** pencil icon → **Version: New version → Deploy**.
-The web app URL stays the same.
+If PowerShell says *"running scripts is disabled"*, use `npm.cmd run push`, or allow scripts once with:
+`Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned`
 
-Save your changes to GitHub from VS Code's **Source Control** panel (commit, then **Sync / Push**), or:
+Check it with **Deploy → Test deployments**, then publish with **Deploy → Manage deployments → ✏️ → Version: New version → Deploy**.
+
+Save your changes to GitHub from VS Code's **Source Control** panel (commit, then **Sync**), or:
 
 ```bash
 git add -A
@@ -30,7 +34,8 @@ git push
 
 ## Good to know
 
-- `clasp push` makes the Apps Script project **exactly like this folder**: files that only exist in Apps Script are deleted.
-- **Never run `clasp pull` over newer local work.** It overwrites your files with what is in Apps Script.
-- `appsscript.json` holds the web app settings (**executeAs**, **access**). Change them there or in the Deploy dialog.
-- Something broke? Every change is in GitHub (**Commits**). You can see exactly what changed and go back.
+- **Only edit `app/`, `server/` and `appsscript.json`.** `dist/` is rebuilt on every `npm run push`, and isn't saved in GitHub.
+- `clasp push` makes the Apps Script project **exactly like `dist/`**. Edits made directly in the Apps Script editor are overwritten, so make them here instead.
+- **Never run `clasp pull`.** It would download the built single file over this folder structure.
+- `appsscript.json` holds the web app settings (`executeAs`, `access`). `"ANYONE_ANONYMOUS"` means anyone with the link can open it without signing in.
+- New file? Put it in the right `app/` folder and add an `<!-- @include folder/file -->` line in `app/index.html`.

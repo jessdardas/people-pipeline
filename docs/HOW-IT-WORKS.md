@@ -2,14 +2,14 @@
 
 ```
 Google Drive                 Apps Script (server)                   Browser (the page)
-people pipeline.xlsx  ──►  Code.js + XlsxReader.js  ── getData() ──►  js_*.html files
+people pipeline.xlsx  ──►  server/Code.js + XlsxReader.js ── getData() ──►  app/ (built into Index.html)
                            read, link on accountid,                  build accounts, filter,
                            compress                                  draw maps / table / details
 ```
 
-## 1. The server (`Code.js`, `XlsxReader.js`)
+## 1. The server (`server/Code.js`, `server/XlsxReader.js`)
 
-1. **`doGet()`** runs when someone opens the web app URL. It builds `Index.html`; every `<?!= include('...') ?>` line pastes in one of the css/js files.
+1. **`doGet()`** runs when someone opens the web app URL and sends `Index.html`. That file is made by `build.js` from everything in `app/` (see below).
 2. **`sourceFile_()`** finds the newest non-trashed Drive file called `people pipeline.xlsx`. If there is none, it uses the fixed `SOURCE_FILE_ID`. This means re-uploading the file is enough; no code change needed.
 3. **`readXlsx_()`** reads the `.xlsx` without any add-on: an `.xlsx` is a zip file, so it unzips it and reads the XML of every sheet into rows.
 4. **`getData()`** works out what each sheet is **by its column names** (sheet names and order don't matter):
@@ -23,15 +23,15 @@ people pipeline.xlsx  ──►  Code.js + XlsxReader.js  ── getData() ─�
 5. **`packSheet_()`** makes the data smaller before sending it: it stores it column by column, and text that repeats a lot (like "London") is stored once in a dictionary with numbers pointing to it.
 6. **`getStamp()`** is a cheap check the page calls every 10 minutes to see if the Drive file changed.
 
-## 2. The page (`js_*.html`)
+## 2. The page (`app/`)
 
-**Start** (`js_main.html`): `load()` calls `getData()` on the server, then `build()` and `renderAll()`.
+**Start** (`app/core/main.js`): `load()` calls `getData()` on the server, then `build()` and `renderAll()`.
 
-**Building accounts** (`js_data.html`, `build()`): for every account row it makes one object with easy fields: `name`, `cls` (classification), `category`, `su` (service unit), `phase`, `pipe`, `lastMeeting` (days ago), `postV` (Post-P1 value), `projects`, `social`… It also gives each account its **filter values** (`a.fv`), e.g. the value bucket "10k–25k".
+**Building accounts** (`app/core/data.js`, `build()`): for every account row it makes one object with easy fields: `name`, `cls` (classification), `category`, `su` (service unit), `phase`, `pipe`, `lastMeeting` (days ago), `postV` (Post-P1 value), `projects`, `social`… It also gives each account its **filter values** (`a.fv`), e.g. the value bucket "10k–25k".
 
-**Filtering** (`js_filters.html`, `pass()`): an account is shown only if it matches the selected service units, pipelines, every filter in the panel and the social media filters.
+**Filtering** (`app/filters/filters.js`, `pass()`): an account is shown only if it matches the selected service units, pipelines, every filter in the panel and the social media filters.
 
-**The 4 maps** (`js_maps.html`, `MAPS`): each map has
+**The 4 maps** (`app/matrix/maps.js`, `MAPS`): each map has
 - `filter`: which accounts belong on it (e.g. classification = "current pipeline"),
 - `rows` and `cols`: the matrix headings,
 - `place(a)`: returns `[row, column]` for an account.
@@ -43,16 +43,33 @@ people pipeline.xlsx  ──►  Code.js + XlsxReader.js  ── getData() ─�
 | 03 No business | past demand, met in/out, contacted, not contacted | account category | classification |
 | All accounts | everyone | account category | classification |
 
-**Drawing** (`js_matrix.html`, `render()`): counts the accounts per cell and colours each cell darker the more accounts it holds. Clicking a number opens the **account table** (`js_table.html`) for that cell, which you can sort, filter per column, search and export.
+**Drawing** (`app/matrix/matrix.js`, `render()`): counts the accounts per cell and colours each cell darker the more accounts it holds. Clicking a number opens the **account table** (`app/table/table.js`) for that cell, which you can sort, filter per column, search and export.
 
-**Details** (`js_details.html`, `openDetail()`): the side panel with the overview, projects, social media, and "More details", which lists **every other column in the file**, so new query columns appear there automatically.
+**Details** (`app/details/details.js`, `openDetail()`): the side panel with the overview, projects, social media, and "More details", which lists **every other column in the file**, so new query columns appear there automatically.
 
-**Search** (`js_search.html`): type 2+ letters, pick an account; `goTo()` switches to the right map, loosens only the filters that would hide it and highlights its cell in yellow.
+**Search** (`app/search/search.js`): type 2+ letters, pick an account; `goTo()` switches to the right map, loosens only the filters that would hide it and highlights its cell in yellow.
 
-**Export** (`js_export.html`): loads the SheetJS / jsPDF libraries only when you click Excel or PDF, then downloads the current table (Excel also gets a "Projects" and an "Info" sheet).
+**Export** (`app/export/export.js`): loads the SheetJS / jsPDF libraries only when you click Excel or PDF, then downloads the current table (Excel also gets a "Projects" and an "Info" sheet).
 
-**Auto refresh** (`js_main.html`): every 10 minutes it asks `getStamp()`; if the file changed (or an hour passed) it reloads the data and keeps the open cell / account.
+**Auto refresh** (`app/core/main.js`): every 10 minutes it asks `getStamp()`; if the file changed (or an hour passed) it reloads the data and keeps the open cell / account.
 
 ## Dates
 
 The file stores dates as Excel numbers (days since 1900). `fmtXl()` turns them into readable dates. Dates on or before 1 Jan 2000 (`NEVER = 36600`) mean "never".
+
+## 3. The build (`build.js`)
+
+Apps Script can only store server files (`.gs` / `.js`) and `.html` files, so it cannot hold the page's `.css` and `.js` files as they are.
+`npm run build` runs `build.js`, which:
+
+1. reads `app/index.html`,
+2. replaces every `<!-- @include folder/file -->` line with that file (`.css` → `<style>`, `.js` → `<script>`, `.html` → pasted as is),
+3. writes the result to `dist/Index.html`, and copies `server/*.js` and `appsscript.json` into `dist/`.
+
+`clasp push` sends `dist/` to Apps Script (`"rootDir": "dist"` in `.clasp.json`). `npm run push` does both. Never edit `dist/`; it is rebuilt every time (and not saved in GitHub).
+
+**Adding a new file:** create it in the right `app/` folder and add an `<!-- @include folder/file -->` line for it in `app/index.html` (scripts: before `core/main.js`).
+
+## Dates in the page
+
+Every date is shown with the days since then, e.g. "19 Dec 2025 (279 days ago)": `dateAgo()` / `agoText()` in `app/core/helpers.js`. The Excel export keeps plain dates.
