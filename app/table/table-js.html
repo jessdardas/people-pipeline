@@ -113,19 +113,6 @@ var TCOLS = [
     }
   },
   {
-    k: 'prj',
-    t: 'Projects',
-    g: function (a) {
-      return projSummary(a);
-    },
-    s: function (a) {
-      return -a.projects.length;
-    },
-    fv: function (a) {
-      return a.fv.proj;
-    }
-  },
-  {
     k: 'soc',
     t: 'Social media',
     g: function (a) {
@@ -149,16 +136,6 @@ function lmBucket(d) {
           : d < 730
             ? '1–2 years'
             : '2+ years';
-}
-
-function projSummary(a) {
-  if (!a.projects.length) return '';
-  var names = a.projects.map(function (e) {
-    var n = projName(e),
-      ph = phaseKey(cellBy(e.s, e.j, 'Phase_Group'));
-    return (n || '') + (ph ? (n ? ' (' + ph + ')' : ph) : '');
-  });
-  return a.projects.length + ' · ' + names.join(', ');
 }
 
 /** "Instagram + LinkedIn": the platforms of an account (all details are in the account panel) */
@@ -363,7 +340,7 @@ function renderHeadList() {
   var keys = Object.keys(cnt);
   if (c.fv) {
     var ord = FDEF.filter(function (f) {
-      return f.k === { postv: 'val', valid: 'valid', prj: 'proj' }[c.k];
+      return f.k === { postv: 'val', valid: 'valid' }[c.k];
     })[0];
     var o =
       (ord && ord.order) ||
