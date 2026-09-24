@@ -1,3 +1,4 @@
+<script>
 /* Draws the matrix for the current view */
 function scopeText() {
   var u = S.units.length ? S.units.map(unitLabel).join(', ') : 'All service units';
@@ -174,3 +175,4 @@ function render() {
   main.innerHTML = h;
   if (S.list && (S.cell || S.view === 4)) renderList();
 }
+</script>

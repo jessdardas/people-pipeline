@@ -1,3 +1,4 @@
+<script>
 /* Search box at the top + jump to an account on the map */
 function gSearch() {
   var q = document.getElementById('gq').value.toLowerCase().trim(),
@@ -97,3 +98,4 @@ function goTo(i) {
   }, 30);
   toast((adj.length ? 'Filters loosened to show it (' + adj.join(', ') + ') · ' : '') + loc.txt + '');
 }
+</script>

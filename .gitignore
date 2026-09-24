@@ -1,5 +1,3 @@
 .vs/
 node_modules/
 *.tmp
-# built by build.js (npm run build) - edit app/ and server/ instead
-dist/

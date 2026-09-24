@@ -1,0 +1,3811 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!--
+    This is the page skeleton. build.js replaces every "@include" line with that file
+    (css → <style>, js → <script>, html → pasted as is) and writes dist/Index.html.
+    Every part of the screen has its own folder in app/ - see docs/SCREEN-GUIDE.md.
+  -->
+
+  <!-- Styles -->
+  <!-- app/core/base.css -->
+  <style>
+    /* ==========================================================================
+       BASE: colours, fonts and things used everywhere (buttons, links, hints, loading)
+       Change a colour here and it changes on the whole page.
+       ========================================================================== */
+    :root {
+      /* page */
+      --bg: #f6f5fb; /* page background (behind the cards) */
+      --surface: #ffffff; /* cards, header, panels */
+      --soft: #f1effa; /* hover backgrounds, table headers */
+      --line: #e6e3f0; /* borders and dividers */
+
+      /* text */
+      --text: #1e1b2e; /* main text */
+      --text-soft: #5b5872; /* secondary text */
+      --text-faint: #8f8ca5; /* labels, hints, counters */
+
+      /* brand */
+      --accent: #5b4fe0; /* buttons, active tabs, selected items */
+      --accent-soft: #ecebfd; /* light accent backgrounds */
+      --pop: #ff7a59; /* small highlights: filter badges, selected matrix cell */
+
+      /* matrix heat colour: a cell gets this colour, lighter or darker by its number of accounts */
+      --heat-rgb: 91, 79, 224; /* same as --accent, written as r, g, b */
+      --heat-text-dark: #ffffff; /* number on a dark cell */
+      --heat-text-light: #1e1b2e; /* number on a light cell */
+      --found: #ffd23f; /* the yellow glow after "show on map" / search */
+
+      /* shapes */
+      --radius: 10px;
+      --radius-lg: 16px;
+      --shadow: 0 1px 2px rgba(30, 27, 46, 0.05), 0 6px 20px rgba(30, 27, 46, 0.06);
+      --shadow-lg: 0 20px 60px rgba(30, 27, 46, 0.18);
+      --font: 'Plus Jakarta Sans', Inter, 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 13px/1.5 var(--font);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button {
+      font: inherit;
+      color: inherit;
+      background: none;
+      border: 0;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    input {
+      font: inherit;
+      color: inherit;
+    }
+
+    a {
+      color: var(--accent);
+    }
+
+    input[type='checkbox'],
+    input[type='radio'] {
+      accent-color: var(--accent);
+    }
+
+    /* push the next items to the right in a flex row */
+    .ml {
+      margin-left: auto;
+    }
+
+    /* small grey text under titles */
+    .meta {
+      color: var(--text-faint);
+      font-size: 12px;
+      margin-top: 3px;
+    }
+
+    .hint {
+      color: var(--text-faint);
+      font-size: 12px;
+      margin: 14px 0 0;
+    }
+
+    /* primary button (Apply, Excel, PDF) */
+    .btn {
+      background: var(--accent);
+      color: #fff;
+      border-radius: 999px;
+      padding: 6px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      transition:
+        filter 0.15s,
+        transform 0.15s;
+    }
+    .btn:hover {
+      filter: brightness(1.1);
+      transform: translateY(-1px);
+    }
+
+    /* text links (clear, all, none, Cancel …) */
+    .lnk {
+      font-size: 12px;
+      color: var(--text-soft);
+      text-decoration: underline;
+      text-decoration-color: var(--line);
+      text-underline-offset: 3px;
+    }
+    .lnk:hover {
+      color: var(--accent);
+      text-decoration-color: var(--accent);
+    }
+
+    /* main area */
+    main {
+      padding: 24px 32px 70px;
+    }
+
+    /* "Reading the source file…" while loading, and "No accounts for this selection" */
+    .loading,
+    .empty {
+      padding: 70px 20px;
+      text-align: center;
+      color: var(--text-soft);
+      background: var(--surface);
+      border: 1.5px dashed var(--line);
+      border-radius: var(--radius-lg);
+    }
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      margin-right: 10px;
+      vertical-align: -3px;
+      border: 2.5px solid var(--accent-soft);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+    .empty p {
+      margin: 4px 0;
+    }
+    .empty-icon {
+      font-size: 28px;
+      margin-bottom: 6px;
+    }
+
+    /* the small message at the bottom of the screen */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--text);
+      color: #fff;
+      padding: 10px 20px;
+      font-size: 12.5px;
+      border-radius: 999px;
+      box-shadow: var(--shadow-lg);
+      display: none;
+      z-index: 80;
+      max-width: 90vw;
+      animation: toast-in 0.25s ease-out;
+    }
+    @keyframes toast-in {
+      from {
+        opacity: 0;
+        transform: translate(-50%, 10px);
+      }
+    }
+
+    @media (max-width: 760px) {
+      main {
+        padding-left: 16px;
+        padding-right: 16px;
+      }
+    }
+  </style>
+  <!-- app/header/header.css -->
+  <style>
+    /* ==========================================================================
+       HEADER: logo, "Last refreshed", service unit buttons, pipeline menu, map tabs
+       Markup: header/header.html · filled by header/header.js
+       ========================================================================== */
+
+    /* the white block at the top (logo row + units row + tabs row) */
+    .top,
+    .bar,
+    .nav {
+      background: var(--surface);
+      padding-left: 32px;
+      padding-right: 32px;
+    }
+
+    /* ---------- row 1: logo, refresh, search ---------- */
+    .top {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      padding-top: 16px;
+      padding-bottom: 6px;
+      flex-wrap: wrap;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      white-space: nowrap;
+    }
+    .logo-mark {
+      width: 22px;
+      height: 22px;
+      border-radius: 7px;
+      background: linear-gradient(135deg, var(--accent), var(--pop));
+      box-shadow: 0 3px 10px rgba(var(--heat-rgb), 0.35);
+    }
+    .logo-name {
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      font-size: 13px;
+    }
+    .logo-app {
+      font-weight: 500;
+      color: var(--text-soft);
+      font-size: 13px;
+      padding-left: 9px;
+      border-left: 1px solid var(--line);
+    }
+
+    /* "Last refreshed 24 Sep 2026, 10:12 ↻" */
+    .rf {
+      margin-left: auto;
+      font-size: 11.5px;
+      color: var(--text-faint);
+      white-space: nowrap;
+    }
+    .rf b {
+      color: var(--text-soft);
+      font-weight: 600;
+    }
+    .rf button {
+      margin-left: 6px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      color: var(--text-soft);
+      font-size: 13px;
+      transition:
+        background 0.15s,
+        transform 0.3s;
+    }
+    .rf button:hover {
+      background: var(--soft);
+      color: var(--accent);
+      transform: rotate(90deg);
+    }
+
+    /* ---------- row 2: service units (left) + pipelines (right) ---------- */
+    .bar {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px 28px;
+      flex-wrap: wrap;
+      padding-top: 12px;
+      padding-bottom: 12px;
+    }
+
+    .units {
+      display: flex;
+      align-items: flex-end;
+      gap: 4px 4px;
+      flex-wrap: wrap;
+    }
+
+    /* one service unit chip (All, Beirut, London …) */
+    .units button {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-soft);
+      padding: 4px 11px;
+      border-radius: 999px;
+      transition:
+        background 0.15s,
+        color 0.15s;
+    }
+    .units button:hover {
+      background: var(--soft);
+      color: var(--text);
+    }
+    .units button.on {
+      background: var(--accent);
+      color: #fff;
+    }
+    .units button.nodata {
+      opacity: 0.45; /* unit without accounts in the file */
+    }
+
+    /* a group of units (Benelux) with its name above */
+    .ugrp {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0 4px;
+    }
+    .ugrp .grp {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      padding: 0 10px 3px;
+      color: var(--text-faint);
+    }
+    .ugrp .grp.on {
+      background: none;
+      color: var(--accent);
+    }
+    .ugrp .row {
+      display: flex;
+      gap: 4px;
+      border-top: 1.5px solid var(--line);
+      padding-top: 4px;
+    }
+
+    /* "multiple" tick box */
+    .multi {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      color: var(--text-faint);
+      margin-left: 8px;
+      padding-bottom: 5px;
+      cursor: pointer;
+    }
+    .multi input {
+      margin: 0;
+      width: 13px;
+      height: 13px;
+    }
+
+    /* pipeline dropdown */
+    .pipes {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .pbtn {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+      border: 1.5px solid var(--line);
+      border-radius: 999px;
+      padding: 5px 14px;
+      transition: border-color 0.15s;
+    }
+    .pbtn:hover {
+      border-color: var(--accent);
+    }
+    .pbtn i {
+      font-style: normal;
+      font-size: 9px;
+      color: var(--text-faint);
+      margin-left: 4px;
+    }
+    .pmenu {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 8px);
+      z-index: 50;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      width: 310px;
+      padding: 6px;
+    }
+    .pmenu label {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 9px 12px;
+      border-radius: var(--radius);
+      cursor: pointer;
+    }
+    .pmenu label:hover {
+      background: var(--soft);
+    }
+    .pmenu input {
+      margin: 3px 0 0;
+    }
+    .pmenu b {
+      display: block;
+      font-weight: 600;
+      font-size: 12.5px;
+    }
+    .pmenu small {
+      display: block;
+      color: var(--text-faint);
+      font-size: 11.5px;
+    }
+    .pm-f {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 12px 4px;
+      border-top: 1px solid var(--soft);
+      margin-top: 4px;
+    }
+
+    /* ---------- row 3: map tabs + Filters ---------- */
+    .nav {
+      display: flex;
+      align-items: center;
+      gap: 16px 24px;
+      padding-top: 4px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--line);
+      flex-wrap: wrap;
+    }
+
+    /* the tabs look like one pill with the active one lifted out */
+    .tabs {
+      display: flex;
+      gap: 2px;
+      flex-wrap: wrap;
+      background: var(--soft);
+      padding: 4px;
+      border-radius: 22px;
+    }
+    .tabs button {
+      padding: 7px 16px;
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--text-soft);
+      border-radius: 999px;
+      transition:
+        background 0.15s,
+        color 0.15s;
+    }
+    .tabs button:hover {
+      color: var(--text);
+    }
+    .tabs button b {
+      font-weight: 700;
+      font-size: 10px;
+      margin-right: 7px;
+      color: var(--text-faint);
+    }
+    .tabs button.on {
+      background: var(--surface);
+      color: var(--text);
+      font-weight: 600;
+      box-shadow: 0 1px 3px rgba(30, 27, 46, 0.12);
+    }
+    .tabs button.on b {
+      color: var(--accent);
+    }
+    /* "All accounts" sits a bit apart */
+    .tabs button.far {
+      margin-left: 8px;
+      position: relative;
+    }
+    .tabs button.far::before {
+      content: '';
+      position: absolute;
+      left: -6px;
+      top: 25%;
+      height: 50%;
+      border-left: 1.5px solid var(--line);
+    }
+
+    @media (max-width: 760px) {
+      .top,
+      .bar,
+      .nav {
+        padding-left: 16px;
+        padding-right: 16px;
+      }
+      .rf {
+        margin-left: 0;
+      }
+    }
+  </style>
+  <!-- app/search/search.css -->
+  <style>
+    /* ==========================================================================
+       SEARCH: the "Search an account…" box (top right) and its results list
+       Markup: header/header.html (.gs) · results filled by search/search.js
+       ========================================================================== */
+    .gs {
+      position: relative;
+      width: 280px;
+      max-width: 100%;
+    }
+    .gs-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      width: 15px;
+      height: 15px;
+      transform: translateY(-50%);
+      fill: none;
+      stroke: var(--text-faint);
+      stroke-width: 2.2;
+      stroke-linecap: round;
+      pointer-events: none;
+    }
+    .gs input {
+      width: 100%;
+      border: 1.5px solid transparent;
+      background: var(--soft);
+      border-radius: 999px;
+      padding: 7px 14px 7px 32px;
+      outline: none;
+      font-size: 12.5px;
+      transition:
+        border-color 0.15s,
+        background 0.15s;
+    }
+    .gs input:focus {
+      background: var(--surface);
+      border-color: var(--accent);
+    }
+
+    /* results dropdown */
+    .gres {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 8px);
+      width: 440px;
+      max-width: 92vw;
+      max-height: 440px;
+      overflow: auto;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      padding: 6px;
+      z-index: 40;
+      display: none;
+    }
+    .gres.open {
+      display: block;
+    }
+    .gres button {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 9px 12px;
+      border-radius: var(--radius);
+    }
+    .gres button:hover,
+    .gres button.act {
+      background: var(--accent-soft);
+    }
+    .gres b {
+      font-weight: 600;
+    }
+    .gres small {
+      display: block;
+      color: var(--text-faint);
+      font-size: 11.5px;
+    }
+    .gres .none {
+      padding: 10px 12px;
+      color: var(--text-faint);
+    }
+  </style>
+  <!-- app/filters/filters.css -->
+  <style>
+    /* ==========================================================================
+       FILTERS: the "Filters" button, "clear", and the filter panel that opens under it
+       Markup: header/header.html (.fwrap) · filled by filters/filter-panel.js
+       ========================================================================== */
+    .fwrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* "Filters" button (+ number of active filters) */
+    .fb {
+      border: 1.5px solid var(--line);
+      padding: 5px 14px;
+      font-size: 12.5px;
+      font-weight: 600;
+      border-radius: 999px;
+      color: var(--text-soft);
+      transition:
+        border-color 0.15s,
+        color 0.15s;
+    }
+    .fb:hover,
+    .fb.on {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .fb span {
+      display: inline-block;
+      min-width: 18px;
+      height: 18px;
+      line-height: 18px;
+      border-radius: 9px;
+      background: var(--pop);
+      color: #fff;
+      font-size: 10.5px;
+      text-align: center;
+      margin-left: 5px;
+    }
+
+    /* "clear" next to it */
+    .fclear {
+      font-size: 12px;
+      color: var(--text-faint);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    .fclear:hover {
+      color: var(--pop);
+    }
+
+    /* the panel: list of filters on the left, their values on the right, buttons at the bottom */
+    .fpanel {
+      position: absolute;
+      top: calc(100% + 10px);
+      left: 0;
+      z-index: 60;
+      width: 600px;
+      max-width: 92vw;
+      height: 480px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+      display: none;
+      grid-template-columns: 200px 1fr;
+      grid-template-rows: 1fr auto;
+    }
+    .fpanel.open {
+      display: grid;
+    }
+
+    /* left: filter names */
+    .fp-l {
+      overflow: auto;
+      background: #fbfaff;
+      border-right: 1px solid var(--line);
+      padding: 8px;
+    }
+    .fp-l button {
+      display: flex;
+      width: 100%;
+      text-align: left;
+      padding: 7px 12px;
+      font-size: 12.5px;
+      color: var(--text-soft);
+      border-radius: var(--radius);
+    }
+    .fp-l button.sub {
+      padding-left: 26px;
+      font-size: 12px;
+    }
+    .fp-l button:hover {
+      background: var(--soft);
+    }
+    .fp-l button.on {
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .fp-l button span {
+      margin-left: auto;
+      font-size: 10.5px;
+      color: #fff;
+      background: var(--pop);
+      border-radius: 9px;
+      min-width: 18px;
+      height: 18px;
+      line-height: 18px;
+      text-align: center;
+    }
+
+    /* right: values of the chosen filter */
+    .fp-r {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .fp-t {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      padding: 14px 16px 4px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .fp-q {
+      margin: 6px 16px;
+      border: 1.5px solid transparent;
+      background: var(--soft);
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 12.5px;
+      outline: none;
+    }
+    .fp-q:focus {
+      border-color: var(--accent);
+      background: var(--surface);
+    }
+    .fp-list {
+      overflow: auto;
+      flex: 1;
+      padding: 4px 8px;
+    }
+    .fp-list label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 10px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 12.5px;
+    }
+    .fp-list label:hover {
+      background: var(--soft);
+    }
+    .fp-list label span {
+      flex: 1;
+    }
+    .fp-list label small {
+      color: var(--text-faint);
+      font-size: 11.5px;
+      font-variant-numeric: tabular-nums;
+    }
+    .fp-list input {
+      margin: 0;
+    }
+    .novals span {
+      color: var(--text-faint);
+    }
+
+    /* bottom: Reset · Cancel · Apply */
+    .fp-f {
+      grid-column: 1 / 3;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 12px 16px;
+      border-top: 1px solid var(--line);
+    }
+
+    @media (max-width: 760px) {
+      .fpanel {
+        grid-template-columns: 130px 1fr;
+      }
+    }
+  </style>
+  <!-- app/matrix/matrix.css -->
+  <style>
+    /* ==========================================================================
+       MATRIX: title of the map + the coloured grid of numbers
+       Filled by matrix/matrix.js (render). Rows/columns of each map: matrix/maps.js
+       The heat colour of the cells is --heat-rgb in core/base.css
+       ========================================================================== */
+
+    /* map title ("Current pipeline") + selection text under it */
+    .head {
+      margin-bottom: 16px;
+    }
+    h1 {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      margin: 0;
+    }
+
+    /* the white card around the grid */
+    .matrix {
+      overflow: auto;
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      padding: 14px 18px 10px 10px;
+    }
+
+    table.grid {
+      border-collapse: separate;
+      border-spacing: 4px; /* the gap between the cells */
+      width: 100%;
+    }
+    .grid th,
+    .grid td {
+      padding: 0;
+    }
+
+    /* column titles (P0, P1 … / 0–6 months …) */
+    .grid th.col {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--text-soft);
+      padding: 6px 4px;
+      text-align: center;
+    }
+
+    /* the axis names ("Project phase (latest) →", "Last meeting ↓") */
+    .grid th.xl {
+      font-size: 10.5px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      padding: 2px 4px;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .grid th.yl {
+      width: 22px;
+      vertical-align: middle;
+    }
+    .grid th.yl div {
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      font-size: 10.5px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+      margin: auto;
+    }
+
+    /* row titles (< 6 months, 0–3 months …). width 1% = only as wide as the longest title */
+    .grid th.row {
+      width: 1%;
+      white-space: nowrap;
+      text-align: left;
+      font-size: 12.5px;
+      font-weight: 600;
+      padding: 0 10px 0 4px; /* space between the row titles and the cells */
+      height: 56px;
+    }
+    .grid th.row small {
+      display: block;
+      color: var(--text-faint);
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    /* one cell with a number */
+    .grid td.c {
+      height: 56px;
+      min-width: 64px;
+      text-align: center;
+      border-radius: var(--radius);
+      position: relative;
+      transition:
+        transform 0.12s,
+        box-shadow 0.12s;
+    }
+    .grid td.c button {
+      width: 100%;
+      height: 100%;
+      min-height: 56px;
+      font-size: 16px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      border-radius: var(--radius);
+    }
+    .grid td.c:not(.zero):hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 18px rgba(var(--heat-rgb), 0.25);
+    }
+    /* the cell whose accounts are shown below */
+    .grid td.c.sel {
+      box-shadow: inset 0 0 0 3px var(--pop);
+    }
+    /* a cell with no accounts */
+    .grid td.zero {
+      color: var(--text-faint);
+      background: transparent;
+      border: 1.5px dashed var(--line);
+      font-size: 12px;
+    }
+
+    /* totals: last column and last row */
+    .grid td.tot,
+    .grid th.tot {
+      font-size: 12px;
+      color: var(--text-soft);
+      text-align: center;
+      padding: 0 10px;
+      white-space: nowrap;
+      font-weight: 500;
+      width: 70px;
+      font-variant-numeric: tabular-nums;
+    }
+    .grid th.tot {
+      font-size: 11.5px;
+      font-weight: 600;
+    }
+    .grid tr.sum th,
+    .grid tr.sum td {
+      height: 38px;
+      border-top: 1.5px solid var(--line);
+    }
+    .grid tr.sum th {
+      text-align: left;
+      font-weight: 600;
+      font-size: 12.5px;
+      padding: 0 10px 0 4px;
+    }
+    .grid td.grand b {
+      color: var(--accent);
+      font-weight: 800;
+      font-size: 14px;
+    }
+
+    /* the yellow glow on the cell of an account found with search / "Show on map" */
+    .grid td.c.hl {
+      box-shadow:
+        0 0 0 3px var(--found),
+        0 0 22px 4px rgba(255, 210, 63, 0.8) !important;
+      animation: glow 1s ease-in-out 5;
+    }
+    @keyframes glow {
+      50% {
+        box-shadow:
+          0 0 0 3px var(--found),
+          0 0 6px 1px rgba(255, 210, 63, 0.4);
+      }
+    }
+  </style>
+  <!-- app/table/table.css -->
+  <style>
+    /* ==========================================================================
+       TABLE: the list of accounts under the matrix (and the tables in the details panel)
+       Filled by table/table.js (listBlock, renderList, openHead)
+       ========================================================================== */
+
+    /* the white card around it */
+    .inl {
+      position: relative;
+      margin-top: 22px;
+      background: var(--surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      padding: 16px 20px 18px;
+    }
+
+    /* card header: "123 accounts" + search + Excel / PDF + × */
+    .inh {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 12px 20px;
+      flex-wrap: wrap;
+      padding-bottom: 12px;
+    }
+    .inh h2 {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 800;
+    }
+    .dtools {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .dtools input {
+      width: 240px;
+      border: 1.5px solid transparent;
+      background: var(--soft);
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 12.5px;
+      outline: none;
+    }
+    .dtools input:focus {
+      border-color: var(--accent);
+      background: var(--surface);
+    }
+    .x2 {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      font-size: 20px;
+      line-height: 1;
+      color: var(--text-faint);
+      margin-left: 4px;
+    }
+    .x2:hover {
+      background: var(--soft);
+      color: var(--text);
+    }
+
+    /* the table itself */
+    .tw {
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+    }
+    table.tb {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 12.5px;
+    }
+    .tb th {
+      text-align: left;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--text-soft);
+      background: var(--soft);
+      padding: 9px 12px;
+      white-space: nowrap;
+      cursor: pointer;
+      position: sticky;
+      top: 0;
+    }
+    .tb th:hover,
+    .tb th.s {
+      color: var(--accent); /* sorted or filtered column */
+    }
+    .tb td {
+      padding: 8px 12px;
+      border-top: 1px solid var(--soft);
+      white-space: nowrap;
+      max-width: 260px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .tb td b {
+      font-weight: 600;
+    }
+    .tb tbody tr {
+      cursor: pointer;
+    }
+    .tb tbody tr:nth-child(even) td {
+      background: #fcfbff;
+    }
+    .tb tbody tr:hover td {
+      background: var(--accent-soft);
+    }
+    .tb td.num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+    /* the # counter column */
+    .tb .cnt {
+      width: 1%;
+      text-align: right;
+      color: var(--text-faint);
+      font-size: 11.5px;
+      font-variant-numeric: tabular-nums;
+      padding-right: 4px;
+      cursor: default;
+    }
+    .tb th.cnt:hover {
+      color: var(--text-soft);
+    }
+    /* the row of an account found with search */
+    .tb tr.hl td {
+      background: #fff6cf !important;
+    }
+    .fdot {
+      font-style: normal;
+      font-size: 8px;
+      vertical-align: middle;
+      color: var(--pop);
+    }
+    .nomatch {
+      padding: 12px 4px;
+    }
+
+    /* "Show more (… left)" */
+    .more {
+      display: block;
+      margin: 14px auto 0;
+      border: 1.5px solid var(--line);
+      border-radius: 999px;
+      padding: 6px 18px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text-soft);
+    }
+    .more:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* menu under a column title: sort + filter by value */
+    .hpop {
+      position: absolute;
+      z-index: 45;
+      width: 290px;
+      max-height: 430px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+      display: none;
+      flex-direction: column;
+    }
+    .hpop.open {
+      display: flex;
+    }
+    .hp-s {
+      display: flex;
+      flex-direction: column;
+      padding: 6px;
+      border-bottom: 1px solid var(--line);
+    }
+    .hp-s button {
+      text-align: left;
+      padding: 7px 12px;
+      font-size: 12.5px;
+      border-radius: var(--radius);
+    }
+    .hp-s button:hover {
+      background: var(--soft);
+    }
+    .hpop .fp-list {
+      max-height: 220px;
+    }
+    .hpop .fp-f {
+      grid-column: auto;
+    }
+  </style>
+  <!-- app/details/details.css -->
+  <style>
+    /* ==========================================================================
+       DETAILS: the side panel that opens when you click an account
+       Markup: details/details.html · filled by details/details.js (openDetail)
+       ========================================================================== */
+
+    /* the grey layer behind the panel */
+    .dim {
+      position: fixed;
+      inset: 0;
+      background: rgba(30, 27, 46, 0.28);
+      backdrop-filter: blur(2px);
+      display: none;
+      z-index: 20;
+    }
+    .dim.open {
+      display: block;
+    }
+
+    /* the panel, sliding in from the right */
+    .drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: min(680px, 100vw);
+      background: var(--surface);
+      border-radius: 22px 0 0 22px;
+      box-shadow: var(--shadow-lg);
+      transform: translateX(105%);
+      transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+      z-index: 30;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .drawer.open {
+      transform: none;
+    }
+
+    /* panel header: account name + unit · classification · category */
+    .dh {
+      position: relative;
+      padding: 24px 28px 18px;
+      background: linear-gradient(120deg, var(--accent-soft), #fff1ec);
+    }
+    .dh h2 {
+      margin: 0;
+      font-size: 19px;
+      font-weight: 800;
+      padding-right: 40px;
+    }
+    .dh .meta {
+      color: var(--text-soft);
+    }
+    /* the × button */
+    .x {
+      position: absolute;
+      top: 18px;
+      right: 20px;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      font-size: 20px;
+      line-height: 1;
+      color: var(--text-soft);
+    }
+    .x:hover {
+      color: var(--text);
+    }
+
+    /* panel body */
+    .det {
+      overflow: auto;
+      flex: 1;
+      padding: 16px 28px 40px;
+    }
+
+    /* section titles: Overview, Projects (3), Social media (1) … */
+    .det h3 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      margin: 26px 0 10px;
+    }
+    .det h3::before {
+      content: '';
+      width: 4px;
+      height: 14px;
+      border-radius: 2px;
+      background: var(--accent);
+    }
+
+    /* "Current pipeline › … — Show on map" */
+    .loc {
+      background: var(--accent-soft);
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-size: 12.5px;
+      margin: 6px 0 4px;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+    .loc button {
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 12.5px;
+      white-space: nowrap;
+    }
+    .loc button:hover {
+      text-decoration: underline;
+    }
+
+    /* label / value list (Overview, More details) */
+    .kv {
+      display: grid;
+      grid-template-columns: 170px 1fr;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .kv div {
+      padding: 7px 12px;
+      border-top: 1px solid var(--soft);
+      font-size: 12.5px;
+    }
+    .kv div:nth-child(-n + 2) {
+      border-top: 0;
+    }
+    .kv div:nth-child(odd) {
+      color: var(--text-soft);
+      background: #fbfaff;
+    }
+
+    /* tables inside the panel (projects, social media) */
+    .det table.tb td {
+      max-width: 220px;
+    }
+    .det .tb th,
+    .det .tb tbody tr {
+      cursor: default;
+    }
+    .det .tb th:hover {
+      color: var(--text-soft);
+    }
+  </style>
+</head>
+<body>
+  <!-- Top of the page: logo, refresh info, search, service units, pipelines, tabs, filters -->
+  <!-- app/header/header.html -->
+  <header class="top">
+    <div class="logo">
+      <span class="logo-mark"></span>
+      <span class="logo-name">PSLAB</span>
+      <span class="logo-app">People Pipeline</span>
+    </div>
+    <!-- "Last refreshed …" + refresh button, filled by renderRefresh() in header/header.js -->
+    <div class="rf" id="rf"></div>
+    <!-- Search box, see search/ -->
+    <div class="gs">
+      <svg class="gs-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="gq" placeholder="Search an account…" autocomplete="off" oninput="gSearch()" onkeydown="gKey(event)" onfocus="gSearch()">
+      <div class="gres" id="gres"></div>
+    </div>
+  </header>
+
+  <!-- Service unit buttons (left) and the pipeline menu (right), filled by renderUnits() in header/header.js -->
+  <div class="bar">
+    <div class="units" id="units"></div>
+    <div class="pipes" id="pipes"></div>
+  </div>
+
+  <!-- Map tabs (renderUnits()) and the Filters button + panel (filters/filter-panel.js) -->
+  <nav class="nav">
+    <div class="tabs" id="tabs"></div>
+    <div class="fwrap">
+      <div id="fbtn"></div>
+      <div class="fpanel" id="fpanel"></div>
+    </div>
+  </nav>
+
+  <!-- The matrix and the account table are drawn in here by matrix/matrix.js and table/table.js -->
+  <main id="main">
+    <div class="loading"><span class="spinner"></span>Reading the source file…</div>
+  </main>
+
+  <!-- Account details side panel -->
+  <!-- app/details/details.html -->
+  <!-- Grey layer behind the panel: clicking it closes the panel -->
+  <div class="dim" id="dim" onclick="closeDrawer()"></div>
+
+  <!-- The panel itself. Title/meta/body are filled by openDetail() in details/details.js -->
+  <aside class="drawer" id="drawer">
+    <div class="dh">
+      <button class="x" onclick="closeDrawer()" title="Close">×</button>
+      <h2 id="aTitle"></h2>
+      <div class="meta" id="aMeta"></div>
+    </div>
+    <div class="det" id="aBody"></div>
+  </aside>
+
+  <!-- Small message at the bottom of the screen (toast() in core/helpers.js) -->
+  <div class="toast" id="toast"></div>
+
+  <!-- Scripts: the order matters - core/main.js must stay last (it starts the app) -->
+  <!-- app/core/config.js -->
+  <script>
+    /* Settings you are most likely to change: service units, pipelines, buckets, app state */
+    // --- dates ---------------------------------------------------------------
+    var NEVER = 36600; // Excel dates on/before 1 Jan 2000 mean "never" in the query
+
+    var M = 30.4375; // days per month
+
+    // --- service units (the buttons at the top left) ---------------------------
+    // Order of the buttons. Units found in the file but not listed here are added at the end.
+    var UNIT_ORDER = [
+      'amsterdam',
+      'antwerp',
+      'bologna',
+      'london',
+      'paris',
+      'new york',
+      'stuttgart',
+      'beirut',
+      'dubai',
+      'core',
+      'marine'
+    ];
+
+    // Units shown together under one heading (k = id, t = label, units = members).
+    var GROUPS = [{ k: 'benelux', t: 'Benelux', units: ['amsterdam', 'antwerp'] }];
+
+    // --- pipelines (the dropdown at the top right) ------------------------------
+    // k = number found in the "pipeline" column, t = label, s = description in the menu.
+    var PIPES = [
+      { k: 1, t: 'Pipeline 1', s: 'paid proposal all + pitch ≥ P1 + direct supply ≥ P3' },
+      { k: 2, t: 'Pipeline 2', s: 'pitch = P0 + direct supply ≤ P2' },
+      { k: 3, t: 'Pipeline 3', s: 'claims all' }
+    ];
+
+    // --- matrix / filter buckets ----------------------------------------------
+    // Project phases = columns of map 01.
+    var PHASES = ['P0', 'P1', 'P2', 'P3', 'P4', 'P5'];
+
+    // Classifications that make up map 03 "No business".
+    var NB = ['past demand', 'met in', 'met out', 'contacted', 'not contacted'];
+
+    // Post-P1 value buckets: the edges (in €) and the label for each bucket (one more label than edges).
+    var VAL_EDGES = [5000, 10000, 25000, 50000, 100000, 250000, 500000, 1000000];
+
+    var VAL_LABELS = [
+      '0–5k',
+      '5k–10k',
+      '10k–25k',
+      '25k–50k',
+      '50k–100k',
+      '100k–250k',
+      '250k–500k',
+      '500k–1M',
+      '1M+'
+    ];
+
+    // Buckets for project counts and for the number of projects in the list.
+    var CNT_LABELS = ['0', '1', '2–3', '4–5', '6–10', '11–20', '21+'];
+
+    var PRJ_LABELS = ['None', '1', '2–5', '6–10', '11+'];
+
+    // --- app state (what is selected right now) - changed by the app, not by hand ---
+    // units/pipes = selected service units / pipelines (pipes: [1] = Pipeline 1 on start),
+    // view = which map tab (1-4), F / SF = filters, g = the account table (sort, column filters, search).
+    var S = {
+      sheets: [],
+      acc: [],
+      byId: {},
+      source: {},
+      checked: 0,
+      units: [],
+      pipes: [1],
+      view: 1,
+      F: {},
+      social: 'all',
+      SF: {},
+      cell: null,
+      list: [],
+      listMeta: '',
+      detail: null,
+      hl: null,
+      g: { sort: { k: 'lm', d: 1 }, cf: {}, q: '', limit: 100 },
+      multiUnit: false,
+      pm: false,
+      pop: null,
+      busy: false
+    };
+  </script>
+  <!-- app/core/helpers.js -->
+  <script>
+    /* Small helpers: escaping, formatting dates / money / labels */
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+
+    function hKey(s) {
+      return String(s == null ? '' : s)
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '');
+    }
+
+    function lc(v) {
+      return v == null ? '' : String(v).toLowerCase().trim();
+    }
+
+    function num(v) {
+      if (v == null || v === '') return null;
+      var n = Number(v);
+      return isNaN(n) ? null : n;
+    }
+
+    function cap(s) {
+      s = String(s == null ? '' : s);
+      return s
+        .replace(/\b[a-z]/g, function (c) {
+          return c.toUpperCase();
+        })
+        .replace(/ - /g, ' – ');
+    }
+
+    function suKey(s) {
+      return String(s || '')
+        .toLowerCase()
+        .replace(/^pslab[\s-]+/, '')
+        .replace(/\s+/g, ' ')
+        .replace(/^newyork$/, 'new york')
+        .trim();
+    }
+
+    function unitLabel(u) {
+      return u ? cap(u) : '—';
+    }
+
+    function phaseKey(v) {
+      var s = String(v == null ? '' : v).trim();
+      if (!s) return '';
+      var m = s.match(/^p?\s*([0-5])\b/i);
+      return m ? 'P' + m[1] : s.toUpperCase();
+    }
+
+    function pipeKey(v) {
+      var m = String(v == null ? '' : v).match(/([1-3])/);
+      return m ? +m[1] : null;
+    }
+
+    function toast(t) {
+      var e = document.getElementById('toast');
+      e.textContent = t;
+      e.style.display = 'block';
+      clearTimeout(toast.t);
+      toast.t = setTimeout(function () {
+        e.style.display = 'none';
+      }, 3200);
+    }
+
+    function api(fn, args) {
+      return new Promise(function (res, rej) {
+        var r = google.script.run.withSuccessHandler(res).withFailureHandler(rej);
+        r[fn].apply(r, args || []);
+      });
+    }
+
+    function todaySerial() {
+      return Date.now() / 864e5 + 25569;
+    }
+
+    function xlDate(s) {
+      return new Date(Math.round((s - 25569) * 864e5));
+    }
+
+    function fmtXl(s, time) {
+      if (s == null) return '';
+      if (s <= NEVER) return 'never';
+      var d = xlDate(s),
+        o = { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' };
+      if (time && Math.abs(s % 1) > 1e-6) {
+        o.hour = '2-digit';
+        o.minute = '2-digit';
+      }
+      return d.toLocaleString('en-GB', o);
+    }
+
+    /** "12 days ago" / "today" / "in 3 days". days = number of days since the date (optional). */
+    function agoText(serial, days) {
+      var d = days != null ? Math.round(days) : Math.floor(todaySerial()) - Math.floor(serial);
+      if (d === 0) return 'today';
+      if (d === 1) return '1 day ago';
+      if (d === -1) return 'in 1 day';
+      return d > 0 ? d.toLocaleString('en-GB') + ' days ago' : 'in ' + (-d).toLocaleString('en-GB') + ' days';
+    }
+
+    /** A date with the days since it: "12 Mar 2025 (190 days ago)". */
+    function dateAgo(serial, time, days) {
+      if (serial == null) return '';
+      if (serial <= NEVER) return 'never';
+      return fmtXl(serial, time) + ' (' + agoText(serial, days) + ')';
+    }
+
+    function fmtTs(ms) {
+      return ms
+        ? new Date(ms).toLocaleString('en-GB', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          })
+        : '';
+    }
+
+    function fmtMoney(v, cur) {
+      if (v == null) return '';
+      return (cur || '€') + ' ' + Math.round(v).toLocaleString('en-GB');
+    }
+
+    function pretty(h) {
+      var s = String(h)
+        .replace(/^pslab_/i, '')
+        .replace(/name$/i, '')
+        .replace(/_/g, ' ')
+        .replace(/([a-z])([A-Z])/g, '$1 $2')
+        .trim();
+      var o = {
+        owneridname: 'Owner',
+        serviceunitname: 'Service unit',
+        serviceunit: 'Service unit',
+        prep1count: 'Pre-P1 projects',
+        postp1count: 'Post-P1 projects',
+        postp1amount: 'Post-P1 value',
+        phasegroup: 'Phase',
+        opportunityid: 'Opportunity ID',
+        accountid: 'Account ID',
+        countryid: 'Country ID',
+        lastcontact1date: 'Last contact',
+        lastprojectdatein: 'Last project',
+        lastmeetingdate: 'Last meeting',
+        lastmeetingindate: 'Last meeting in',
+        lastmeetingoutdate: 'Last meeting out',
+        accountcreation: 'Account created',
+        accountcreateddays: 'Account age',
+        originalcategory: 'Original category',
+        classification2: 'Project bucket',
+        currencysymbol: 'Currency',
+        username: 'User name',
+        pslabusername: 'Username',
+        metin: 'Met in',
+        pslabplatformname: 'Platform',
+        pslablink: 'Link',
+        pslabfollowersname: 'Followers',
+        pslabconnectionsname: 'Connections',
+        pslabcontentqualityname: 'Content quality',
+        pslabpostingfrequencyname: 'Posting frequency',
+        pslabfollowspslabname: 'Follows PSLab',
+        lastprojectdays: 'Last project (days ago)',
+        lastmeetingdays: 'Last meeting (days ago)',
+        classificationorder: 'Classification order',
+        categoryorder: 'Category order'
+      };
+      return o[hKey(h)] || s.charAt(0).toUpperCase() + s.slice(1);
+    }
+
+    function loadScript(src) {
+      return new Promise(function (res, rej) {
+        var s = document.createElement('script');
+        s.src = src;
+        s.onload = res;
+        s.onerror = function () {
+          rej(new Error('Could not load ' + src));
+        };
+        document.head.appendChild(s);
+      });
+    }
+  </script>
+  <!-- app/core/data.js -->
+  <script>
+    /* Turns the server data into one object per account */
+    function cv(si, c, j) {
+      var col = S.sheets[si].cols[c],
+        v = col.v[j];
+      if (col.d) return v == null || v < 0 ? null : col.d[v];
+      return v;
+    }
+
+    var FIELD = {};
+
+    function F(a, key) {
+      var f = FIELD[hKey(key)];
+      if (!f) return null;
+      var j = f.s === 0 ? a.i : a.mr[f.s];
+      return j == null ? null : cv(f.s, f.c, j);
+    }
+
+    function valBucket(v) {
+      if (!v) return 'No value';
+      for (var i = 0; i < VAL_EDGES.length; i++) if (v < VAL_EDGES[i]) return VAL_LABELS[i];
+      return VAL_LABELS[VAL_LABELS.length - 1];
+    }
+
+    function cntBucket(n) {
+      n = n || 0;
+      return n === 0
+        ? '0'
+        : n === 1
+          ? '1'
+          : n <= 3
+            ? '2–3'
+            : n <= 5
+              ? '4–5'
+              : n <= 10
+                ? '6–10'
+                : n <= 20
+                  ? '11–20'
+                  : '21+';
+    }
+
+    function prjBucket(n) {
+      return n === 0 ? 'None' : n === 1 ? '1' : n <= 5 ? '2–5' : n <= 10 ? '6–10' : '11+';
+    }
+
+    function daysFrom(dateKey, daysKey, a) {
+      var d = num(F(a, dateKey));
+      if (d == null || d <= NEVER) return { date: null, days: null };
+      var n = daysKey ? num(F(a, daysKey)) : null;
+      return {
+        date: d,
+        days: n != null ? Math.max(0, Math.round(n)) : Math.max(0, Math.round(todaySerial() - d))
+      };
+    }
+
+    function build(d) {
+      S.source = d.source || {};
+      S.checked = Date.now();
+      S.sheets = d.sheets;
+      S.sheets.forEach(function (s, si) {
+        s.si = si;
+        s.hk = s.cols.map(function (c) {
+          return hKey(c.h);
+        });
+      });
+      FIELD = {};
+      S.sheets.forEach(function (s) {
+        if (s.role !== 'accounts' && s.role !== 'merge') return;
+        s.hk.forEach(function (h, c) {
+          if (!FIELD[h]) FIELD[h] = { s: s.si, c: c };
+        });
+      });
+      var n = S.sheets[0].n,
+        acc = new Array(n);
+      for (var i = 0; i < n; i++) acc[i] = { i: i, mr: {}, L: {} };
+      S.sheets.forEach(function (s) {
+        if (s.role === 'accounts') return;
+        for (var j = 0; j < s.n; j++) {
+          var a = acc[s.link[j]];
+          if (!a) continue;
+          if (s.role === 'merge') a.mr[s.si] = j;
+          else (a.L[s.si] = a.L[s.si] || []).push(j);
+        }
+      });
+      S.byId = {};
+      S.validKey =
+        Object.keys(FIELD).filter(function (k) {
+          return /validat/.test(k);
+        })[0] || null;
+      acc.forEach(function (a) {
+        a.id = String(F(a, 'accountid') || '');
+        a.name = String(F(a, 'name') == null ? '(no name)' : F(a, 'name'));
+        a.lname = a.name.toLowerCase();
+        a.cls = lc(F(a, 'classification')) || 'no classification';
+        a.clsOrder = num(F(a, 'classification_order'));
+        a.category = lc(F(a, 'category'));
+        a.orig = lc(F(a, 'original_category'));
+        a.industry = F(a, 'industry') == null ? '' : String(F(a, 'industry')).trim();
+        a.country = lc(F(a, 'country'));
+        a.su = suKey(F(a, 'serviceunit'));
+        a.owner = F(a, 'owneridname') == null ? '' : String(F(a, 'owneridname'));
+        a.metIn = lc(F(a, 'met in')) === 'yes' ? 'yes' : 'no';
+        var lm = daysFrom('LastMeeting_Date', 'LastMeeting_days', a),
+          lp = daysFrom('LastProject_DateIn', 'LastProject_days', a),
+          lcn = daysFrom('LastContact1_Date', null, a);
+        a.lmDate = lm.date;
+        a.lastMeeting = lm.days;
+        a.lpDate = lp.date;
+        a.lastProject = lp.days;
+        a.lcDate = lcn.date;
+        a.lastContact = lcn.days;
+        a.phase = phaseKey(F(a, 'Phase_Group'));
+        a.pipe = pipeKey(F(a, 'pipeline'));
+        a.preN = num(F(a, 'PreP1_Count')) || 0;
+        a.postN = num(F(a, 'PostP1_Count')) || 0;
+        a.postV = num(F(a, 'PostP1_Amount')) || 0;
+        a.cur = F(a, 'CurrencySymbol') || '€';
+        a.pb = String(F(a, 'classification2') == null ? '' : F(a, 'classification2'));
+        var vd = S.validKey ? F(a, S.validKey) : null;
+        if (typeof vd === 'string') {
+          var pd = Date.parse(vd);
+          vd = isNaN(pd) ? null : pd / 864e5 + 25569;
+        }
+        a.validDate = vd != null && vd > NEVER ? vd : null;
+        a.validDays = a.validDate == null ? null : Math.max(0, Math.round(todaySerial() - a.validDate));
+        a.social = [];
+        a.projects = [];
+        a.lists = [];
+        Object.keys(a.L).forEach(function (si) {
+          var s = S.sheets[si];
+          a.L[si].forEach(function (j) {
+            if (s.role === 'social') {
+              if (rowHasContent(s, j)) a.social.push({ s: +si, j: j });
+            } else if (s.role === 'projects') a.projects.push({ s: +si, j: j });
+            else a.lists.push({ s: +si, j: j });
+          });
+        });
+        a.projPhases = uniq(
+          a.projects
+            .map(function (p) {
+              return phaseKey(cellBy(p.s, p.j, 'Phase_Group'));
+            })
+            .filter(Boolean)
+        ).sort();
+        a.fv = {
+          cls: a.cls,
+          cat: a.category || '(none)',
+          orig: a.orig || '(none)',
+          ind: a.industry || '(none)',
+          country: a.country || '(none)',
+          owner: a.owner || '(none)',
+          metin: a.metIn,
+          phase: a.phase || 'No phase',
+          val: valBucket(a.postV),
+          postn: cntBucket(a.postN),
+          pren: cntBucket(a.preN),
+          proj: prjBucket(a.projects.length),
+          valid: a.validDays == null ? 'Not validated' : lmBucket(a.validDays)
+        };
+        if (a.id) S.byId[a.id] = a;
+      });
+      S.acc = acc;
+      var co = {};
+      acc.forEach(function (a) {
+        if (co[a.cls] == null) co[a.cls] = a.clsOrder == null ? 99 : a.clsOrder;
+      });
+      MAPS[4].cols = Object.keys(co)
+        .sort(function (x, y) {
+          return co[x] - co[y];
+        })
+        .map(function (c) {
+          return { k: c, t: cap(c) };
+        });
+      // units present in data
+      var have = {};
+      acc.forEach(function (a) {
+        if (a.su) have[a.su] = (have[a.su] || 0) + 1;
+      });
+      S.have = have;
+      S.allUnits = UNIT_ORDER.concat(
+        Object.keys(have)
+          .filter(function (u) {
+            return UNIT_ORDER.indexOf(u) < 0;
+          })
+          .sort()
+      );
+      buildSocialFilters();
+    }
+
+    function uniq(a) {
+      var o = {},
+        r = [];
+      a.forEach(function (x) {
+        if (!o[x]) {
+          o[x] = 1;
+          r.push(x);
+        }
+      });
+      return r;
+    }
+
+    function cellBy(si, j, key) {
+      var s = S.sheets[si],
+        c = s.hk.indexOf(hKey(key));
+      return c < 0 ? null : cv(si, c, j);
+    }
+
+    function rowHasContent(s, j) {
+      for (var c = 0; c < s.cols.length; c++) {
+        if (s.hk[c] === 'accountid') continue;
+        if (cv(s.si, c, j) != null) return true;
+      }
+      return false;
+    }
+  </script>
+  <!-- app/filters/filters.js -->
+  <script>
+    /* Filter definitions and the logic that decides if an account passes */
+    var FDEF = [
+      { k: 'cls', t: 'Classification' },
+      { k: 'cat', t: 'Category', lab: cap },
+      { k: 'ind', t: 'Industry', lab: cap },
+      { k: 'country', t: 'Country', lab: cap },
+      { k: 'owner', t: 'Owner', lab: cap },
+      { k: 'metin', t: 'Met in', lab: cap, order: ['yes', 'no'] },
+      { k: 'phase', t: 'Phase (latest)', order: PHASES.concat(['No phase']) },
+      {
+        k: 'val',
+        t: 'Post-P1 value',
+        order: ['No value'].concat(VAL_LABELS),
+        lab: function (v) {
+          return v === 'No value' ? v : '€ ' + v;
+        }
+      },
+      { k: 'postn', t: 'Post-P1 projects', order: CNT_LABELS },
+      { k: 'pren', t: 'Pre-P1 projects', order: CNT_LABELS },
+      { k: 'proj', t: 'Projects (list)', order: PRJ_LABELS },
+      {
+        k: 'valid',
+        t: 'Last validated',
+        order: ['< 3 months', '3–6 months', '6–12 months', '1–2 years', '2+ years', 'Not validated']
+      }
+    ];
+
+    var SFDEF = [];
+
+    function buildSocialFilters() {
+      SFDEF = [];
+      S.sheets.forEach(function (s) {
+        if (s.role !== 'social') return;
+        s.cols.forEach(function (col, c) {
+          var h = s.hk[c];
+          if (h === 'accountid') return;
+          var vals = {};
+          for (var j = 0; j < s.n; j++) {
+            var v = cv(s.si, c, j);
+            if (v != null) vals[v] = 1;
+          }
+          var n = Object.keys(vals).length;
+          if (n >= 1 && n <= 40) SFDEF.push({ k: 's' + s.si + '_' + c, t: pretty(col.h), s: s.si, c: c });
+        });
+      });
+      Object.keys(S.SF).forEach(function (k) {
+        if (
+          !SFDEF.some(function (f) {
+            return f.k === k;
+          })
+        )
+          delete S.SF[k];
+      });
+    }
+
+    function activeF() {
+      return FDEF.filter(function (f) {
+        return S.F[f.k] && S.F[f.k].length;
+      });
+    }
+
+    function activeSF() {
+      return S.social === 'yes'
+        ? SFDEF.filter(function (f) {
+            return S.SF[f.k] && S.SF[f.k].length;
+          })
+        : [];
+    }
+
+    function socialMatch(a, skip) {
+      var act = activeSF().filter(function (f) {
+        return f.k !== skip;
+      });
+      if (!act.length) return true;
+      return a.social.some(function (e) {
+        return act.every(function (f) {
+          if (f.s !== e.s) return true;
+          var v = cv(e.s, f.c, e.j);
+          return S.SF[f.k].indexOf(v == null ? '(none)' : String(v)) >= 0;
+        });
+      });
+    }
+
+    function pass(a, skip) {
+      if (skip !== 'units' && S.units.length && S.units.indexOf(a.su) < 0) return false;
+      if (skip !== 'pipes' && S.pipes.length && S.pipes.indexOf(a.pipe) < 0) return false;
+      for (var i = 0; i < FDEF.length; i++) {
+        var f = FDEF[i];
+        if (f.k === skip) continue;
+        var sel = S.F[f.k];
+        if (sel && sel.length && sel.indexOf(a.fv[f.k]) < 0) return false;
+      }
+      if (skip !== 'social') {
+        if (S.social === 'yes' && !a.social.length) return false;
+        if (S.social === 'no' && a.social.length) return false;
+      }
+      return socialMatch(a, skip);
+    }
+
+    function viewFilter(a) {
+      return MAPS[S.view].filter(a);
+    }
+  </script>
+  <!-- app/matrix/maps.js -->
+  <script>
+    /* The four matrix views (rows, columns, and where each account lands) */
+    function catKey(c) {
+      c = String(c || '')
+        .toLowerCase()
+        .replace(/[–—]/g, '-')
+        .replace(/\s+/g, ' ');
+      if (c === 'design practice') return 'design practice';
+      if (/end user - individual/.test(c)) return 'end user - individual';
+      if (/end user - developer/.test(c)) return 'end user - developer';
+      if (/end user - brand/.test(c)) return 'end user - brand';
+      if (c === 'cce') return 'cce';
+      return 'other';
+    }
+
+    function mo(d) {
+      return d == null ? null : d / M;
+    }
+
+    function band(v, edges, nullKey) {
+      if (v == null) return nullKey;
+      for (var i = 0; i < edges.length; i++) if (v < edges[i]) return i;
+      return edges.length;
+    }
+
+    var MAPS = {
+      1: {
+        title: 'Current pipeline',
+        filter: function (a) {
+          return a.cls === 'current pipeline';
+        },
+        x: 'Project phase (latest)',
+        y: 'Last meeting',
+        cols: PHASES.map(function (p) {
+          return { k: p, t: p };
+        }).concat([{ k: 'none', t: 'No phase', opt: 1 }]),
+        rows: [
+          { k: 0, t: '< 6 months', s: 'actively engaged' },
+          { k: 1, t: '6–12 months', s: 'needs a touchpoint' },
+          { k: 2, t: '1–2 years', s: 'at risk' },
+          { k: 3, t: '> 2 years', s: 'inactive, still revivable' },
+          { k: 'n', t: 'No meeting', s: 'never met', opt: 1 }
+        ],
+        place: function (a) {
+          return [band(mo(a.lastMeeting), [6, 12, 24], 'n'), PHASES.indexOf(a.phase) >= 0 ? a.phase : 'none'];
+        }
+      },
+      2: {
+        title: 'Past clients',
+        filter: function (a) {
+          return a.cls === 'past client';
+        },
+        x: 'Last project',
+        y: 'Last meeting',
+        cols: [
+          { k: 0, t: '0–6 months' },
+          { k: 1, t: '6–12 months' },
+          { k: 2, t: '12–18 months' },
+          { k: 3, t: '18+ months' },
+          { k: 'n', t: 'No project', opt: 1 }
+        ],
+        rows: [
+          { k: 0, t: '0–3 months' },
+          { k: 1, t: '3–6 months' },
+          { k: 2, t: '6–9 months' },
+          { k: 3, t: '9–12 months' },
+          { k: 4, t: '12–15 months' },
+          { k: 5, t: '15–18 months' },
+          { k: 6, t: '18+ months' },
+          { k: 'n', t: 'No meeting', s: 'never met', opt: 1 }
+        ],
+        place: function (a) {
+          return [
+            band(mo(a.lastMeeting), [3, 6, 9, 12, 15, 18], 'n'),
+            /^[1-4]$/.test(a.pb) ? +a.pb - 1 : band(mo(a.lastProject), [6, 12, 18], 'n')
+          ];
+        }
+      },
+      3: {
+        title: 'No business',
+        filter: function (a) {
+          return NB.indexOf(a.cls) >= 0;
+        },
+        x: 'Classification',
+        y: 'Account category',
+        cols: [
+          { k: 'past demand', t: 'Past Demand' },
+          { k: 'met in', t: 'Met In' },
+          { k: 'met out', t: 'Met Out' },
+          { k: 'contacted', t: 'Contacted' },
+          { k: 'not contacted', t: 'Not Contacted' }
+        ],
+        rows: [
+          { k: 'design practice', t: 'Design Practice' },
+          { k: 'end user - individual', t: 'End User – Individual' },
+          { k: 'end user - developer', t: 'End User – Developer' },
+          { k: 'end user - brand', t: 'End User – Brand' },
+          { k: 'cce', t: 'CCE' },
+          { k: 'other', t: 'Other', s: 'incl. lighting designer / dealer' }
+        ],
+        place: function (a) {
+          return [catKey(a.category), a.cls];
+        }
+      },
+      4: {
+        title: 'All accounts',
+        filter: function () {
+          return true;
+        },
+        x: 'Classification',
+        y: 'Account category',
+        cols: [],
+        rows: [
+          { k: 'design practice', t: 'Design Practice' },
+          { k: 'end user - individual', t: 'End User – Individual' },
+          { k: 'end user - developer', t: 'End User – Developer' },
+          { k: 'end user - brand', t: 'End User – Brand' },
+          { k: 'cce', t: 'CCE' },
+          { k: 'other', t: 'Other', s: 'incl. lighting designer / dealer' }
+        ],
+        place: function (a) {
+          return [catKey(a.category), a.cls];
+        }
+      }
+    };
+
+    function viewOf(a) {
+      for (var v = 1; v <= 3; v++) if (MAPS[v].filter(a)) return v;
+      return 4;
+    }
+  </script>
+  <!-- app/header/header.js -->
+  <script>
+    /* Refresh info, service unit buttons, pipeline menu, tabs */
+    function renderRefresh() {
+      var s = S.source;
+      document.getElementById('rf').innerHTML = s.updated
+        ? '<span title="' +
+          esc(
+            (s.name || '') +
+              ' · checked ' +
+              new Date(S.checked).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) +
+              ' · auto-refresh every hour'
+          ) +
+          '">Last refreshed <b>' +
+          esc(fmtTs(s.updated)) +
+          '</b></span><button onclick="refresh()" title="Refresh now">' +
+          (S.busy ? '…' : '↻') +
+          '</button>'
+        : S.busy
+          ? 'Loading…'
+          : '';
+    }
+
+    function renderUnits() {
+      var inGrp = {};
+      GROUPS.forEach(function (g) {
+        g.units.forEach(function (u) {
+          inGrp[u] = 1;
+        });
+      });
+      var ub = function (u) {
+        return (
+          '<button class="' +
+          (S.units.indexOf(u) >= 0 ? 'on ' : '') +
+          (S.have[u] ? '' : 'nodata') +
+          '" onclick="setUnit(\'' +
+          esc(u) +
+          '\')" title="' +
+          (S.have[u] || 0) +
+          ' accounts">' +
+          esc(unitLabel(u)) +
+          '</button>'
+        );
+      };
+      var h = '<button class="' + (S.units.length ? '' : 'on') + '" onclick="setUnit(null)">All</button>';
+      GROUPS.forEach(function (g, gi) {
+        var on = g.units.every(function (x) {
+          return S.units.indexOf(x) >= 0;
+        });
+        h +=
+          '<span class="ugrp"><button class="grp ' +
+          (on ? 'on' : '') +
+          '" onclick="setGroup(' +
+          gi +
+          ')">' +
+          esc(g.t) +
+          '</button><span class="row">' +
+          g.units.map(ub).join('') +
+          '</span></span>';
+      });
+      S.allUnits.forEach(function (u) {
+        if (!inGrp[u]) h += ub(u);
+      });
+      h +=
+        '<label class="multi" title="Tick to select several service units at once"><input type="checkbox" ' +
+        (S.multiUnit ? 'checked' : '') +
+        ' onchange="toggleMulti(this.checked)">multiple</label>';
+      document.getElementById('units').innerHTML = h;
+
+      var lbl = S.pipes.length
+        ? S.pipes
+            .slice()
+            .sort()
+            .map(function (k) {
+              return 'Pipeline ' + k;
+            })
+            .join(' + ')
+        : 'All pipelines';
+      var p = '<button class="pbtn" onclick="S.pm=!S.pm;renderUnits()">' + esc(lbl) + ' <i>▾</i></button>';
+      if (S.pm)
+        p +=
+          '<div class="pmenu">' +
+          PIPES.map(function (x) {
+            return (
+              '<label><input type="checkbox" ' +
+              (S.pipes.indexOf(x.k) >= 0 ? 'checked' : '') +
+              ' onchange="setPipe(' +
+              x.k +
+              ')"><span><b>' +
+              esc(x.t) +
+              '</b><small>' +
+              esc(x.s) +
+              '</small></span></label>'
+            );
+          }).join('') +
+          '<div class="pm-f"><button class="lnk" onclick="setPipe(null)">All pipelines</button><button class="lnk" onclick="S.pm=false;renderUnits()">Close</button></div></div>';
+      document.getElementById('pipes').innerHTML = p;
+
+      document.getElementById('tabs').innerHTML =
+        [1, 2, 3]
+          .map(function (i) {
+            return (
+              '<button class="' +
+              (S.view === i ? 'on' : '') +
+              '" onclick="setView(' +
+              i +
+              ')"><b>0' +
+              i +
+              '</b>' +
+              MAPS[i].title +
+              '</button>'
+            );
+          })
+          .join('') +
+        '<button class="far ' +
+        (S.view === 4 ? 'on' : '') +
+        '" onclick="setView(4)">All accounts</button>';
+    }
+
+    function setUnit(u) {
+      if (u === null) S.units = [];
+      else if (S.multiUnit) {
+        var i = S.units.indexOf(u);
+        if (i >= 0) S.units.splice(i, 1);
+        else S.units.push(u);
+      } else S.units = S.units.length === 1 && S.units[0] === u ? [] : [u];
+      changed();
+    }
+
+    function setGroup(gi) {
+      var g = GROUPS[gi],
+        on = g.units.every(function (x) {
+          return S.units.indexOf(x) >= 0;
+        });
+      if (on)
+        S.units = S.units.filter(function (x) {
+          return g.units.indexOf(x) < 0;
+        });
+      else if (S.multiUnit)
+        g.units.forEach(function (x) {
+          if (S.units.indexOf(x) < 0) S.units.push(x);
+        });
+      else S.units = g.units.slice();
+      changed();
+    }
+
+    function toggleMulti(on) {
+      S.multiUnit = on;
+      var g = GROUPS[0].units,
+        isGrp =
+          S.units.length === g.length &&
+          g.every(function (x) {
+            return S.units.indexOf(x) >= 0;
+          });
+      if (!on && S.units.length > 1 && !isGrp) {
+        S.units = [S.units[0]];
+        changed();
+      } else renderUnits();
+    }
+
+    function setPipe(k) {
+      if (k === null) S.pipes = [];
+      else {
+        var i = S.pipes.indexOf(k);
+        if (i >= 0) S.pipes.splice(i, 1);
+        else S.pipes.push(k);
+      }
+      changed();
+    }
+
+    function setView(i) {
+      S.view = i;
+      changed();
+    }
+
+    function changed() {
+      S.hl = null;
+      S.cell = null;
+      S.g = newGrid();
+      closePanel();
+      closeDrawer();
+      renderAll();
+    }
+
+    function renderAll() {
+      renderRefresh();
+      renderUnits();
+      renderFilters();
+      render();
+    }
+
+    // clicking anywhere else closes the pipeline menu
+    document.addEventListener('mousedown', function (e) {
+      if (S.pm && !e.target.closest('.pipes')) {
+        S.pm = false;
+        renderUnits();
+      }
+    });
+  </script>
+  <!-- app/filters/filter-panel.js -->
+  <script>
+    /* The "Filters" button and its panel */
+    function renderFilters() {
+      var n =
+        activeF().reduce(function (t, f) {
+          return t + S.F[f.k].length;
+        }, 0) +
+        (S.social !== 'all' ? 1 : 0) +
+        activeSF().reduce(function (t, f) {
+          return t + S.SF[f.k].length;
+        }, 0);
+      document.getElementById('fbtn').innerHTML =
+        '<button class="fb' +
+        (n ? ' on' : '') +
+        '" onclick="togglePanel()">Filters' +
+        (n ? ' <span>' + n + '</span>' : '') +
+        '</button>' +
+        (n ? '<button class="fclear" onclick="clearFilters()">clear</button>' : '');
+    }
+
+    function clearFilters() {
+      S.F = {};
+      S.SF = {};
+      S.social = 'all';
+      changed();
+    }
+
+    function isSF(k) {
+      return k.charAt(0) === 's' && /^s\d+_\d+$/.test(k);
+    }
+
+    function fDefOf(k) {
+      return (
+        FDEF.filter(function (f) {
+          return f.k === k;
+        })[0] ||
+        SFDEF.filter(function (f) {
+          return f.k === k;
+        })[0]
+      );
+    }
+
+    function popOptions(k) {
+      var f = fDefOf(k),
+        cnt = {},
+        sf = isSF(k);
+      S.acc.forEach(function (a) {
+        if (!viewFilter(a) || !pass(a, k)) return;
+        if (sf) {
+          var seen = {};
+          a.social.forEach(function (e) {
+            if (e.s !== f.s) return;
+            var v = cv(e.s, f.c, e.j);
+            v = v == null ? '(none)' : String(v);
+            if (!seen[v]) {
+              seen[v] = 1;
+              cnt[v] = (cnt[v] || 0) + 1;
+            }
+          });
+        } else {
+          var v = a.fv[k];
+          cnt[v] = (cnt[v] || 0) + 1;
+        }
+      });
+      // include every value of the whole file (even when 0 in the current view) + the selected ones
+      if (sf) {
+        for (var j = 0; j < S.sheets[f.s].n; j++) {
+          var v2 = cv(f.s, f.c, j);
+          v2 = v2 == null ? '(none)' : String(v2);
+          if (!(v2 in cnt)) cnt[v2] = 0;
+        }
+      } else
+        S.acc.forEach(function (a) {
+          if (!(a.fv[k] in cnt)) cnt[a.fv[k]] = 0;
+        });
+      var sel = (sf ? S.SF[k] : S.F[k]) || [];
+      sel.forEach(function (v) {
+        if (!(v in cnt)) cnt[v] = 0;
+      });
+      var keys = Object.keys(cnt);
+      if (f.order)
+        keys.sort(function (a, b) {
+          var ia = f.order.indexOf(a),
+            ib = f.order.indexOf(b);
+          return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib) || cnt[b] - cnt[a];
+        });
+      else if (k === 'cls') {
+        var ord = {};
+        S.acc.forEach(function (a) {
+          if (ord[a.cls] == null) ord[a.cls] = a.clsOrder == null ? 99 : a.clsOrder;
+        });
+        keys.sort(function (a, b) {
+          return (ord[a] == null ? 99 : ord[a]) - (ord[b] == null ? 99 : ord[b]);
+        });
+      } else
+        keys.sort(function (a, b) {
+          return (a === '(none)') - (b === '(none)') || cnt[b] - cnt[a] || a.localeCompare(b);
+        });
+      return keys.map(function (v) {
+        return { v: v, t: f.lab ? f.lab(v) : sf ? v : cap(v), n: cnt[v], on: sel.indexOf(v) >= 0 };
+      });
+    }
+
+    /* ---------- filter panel: choose, then Apply ---------- */
+    function clone(o) {
+      return JSON.parse(JSON.stringify(o));
+    }
+
+    function withDraft(fn) {
+      var keep = [S.F, S.SF, S.social];
+      S.F = S.draft.F;
+      S.SF = S.draft.SF;
+      S.social = S.draft.social;
+      try {
+        return fn();
+      } finally {
+        S.F = keep[0];
+        S.SF = keep[1];
+        S.social = keep[2];
+      }
+    }
+
+    function togglePanel() {
+      if (S.panel) return closePanel();
+      S.panel = true;
+      S.draft = { F: clone(S.F), SF: clone(S.SF), social: S.social };
+      S.pop = S.pop && (S.pop === 'social' || fDefOf(S.pop)) ? S.pop : 'cls';
+      S.popQ = '';
+      renderPanel();
+      document.getElementById('fpanel').classList.add('open');
+    }
+
+    function closePanel() {
+      S.panel = false;
+      var p = document.getElementById('fpanel');
+      if (p) p.classList.remove('open');
+    }
+
+    function panelKeys() {
+      var k = FDEF.map(function (f) {
+        return { k: f.k, t: f.t };
+      });
+      k.push({ k: 'social', t: 'Social media' });
+      if (S.draft.social === 'yes')
+        SFDEF.forEach(function (f) {
+          k.push({ k: f.k, t: f.t, sub: 1 });
+        });
+      return k;
+    }
+
+    function draftCount(k) {
+      if (k === 'social') return S.draft.social === 'all' ? 0 : 1;
+      var v = (isSF(k) ? S.draft.SF : S.draft.F)[k];
+      return v ? v.length : 0;
+    }
+
+    function renderPanel() {
+      var keys = panelKeys();
+      if (
+        !keys.some(function (x) {
+          return x.k === S.pop;
+        })
+      )
+        S.pop = 'cls';
+      var h =
+        '<div class="fp-l">' +
+        keys
+          .map(function (x) {
+            var n = draftCount(x.k);
+            return (
+              '<button class="' +
+              (S.pop === x.k ? 'on ' : '') +
+              (x.sub ? 'sub' : '') +
+              '" onclick="panelPick(\'' +
+              x.k +
+              '\')">' +
+              esc(x.t) +
+              (n ? '<span>' + n + '</span>' : '') +
+              '</button>'
+            );
+          })
+          .join('') +
+        '</div>';
+      h += '<div class="fp-r" id="fpOpts"></div>';
+      h +=
+        '<div class="fp-f"><button class="lnk" onclick="panelReset()">Reset</button><span class="ml"></span><button class="lnk" onclick="closePanel()">Cancel</button><button class="btn" onclick="panelApply()">Apply</button></div>';
+      document.getElementById('fpanel').innerHTML = h;
+      renderPanelOpts();
+    }
+
+    function renderPanelOpts() {
+      var k = S.pop,
+        box = document.getElementById('fpOpts');
+      if (!box) return;
+      if (k === 'social') {
+        box.innerHTML =
+          '<div class="fp-t">Social media</div><div class="fp-list">' +
+          [
+            ['all', 'Both'],
+            ['yes', 'Has social media'],
+            ['no', 'No social media']
+          ]
+            .map(function (o) {
+              return (
+                '<label><input type="radio" name="soc" ' +
+                (S.draft.social === o[0] ? 'checked' : '') +
+                ' onchange="S.draft.social=\'' +
+                o[0] +
+                "';if(S.draft.social!=='yes')S.draft.SF={};renderPanel()\"><span>" +
+                o[1] +
+                '</span></label>'
+              );
+            })
+            .join('') +
+          '</div>' +
+          (S.draft.social === 'yes'
+            ? '<p class="meta" style="margin:10px 14px">Platform, followers and the other social filters are now on the left.</p>'
+            : '');
+        return;
+      }
+      var f = fDefOf(k);
+      box.innerHTML =
+        '<div class="fp-t">' +
+        esc(f.t) +
+        '<span class="ml"></span><button class="lnk" onclick="panelAll(1)">all</button><button class="lnk" onclick="panelAll(0)">none</button></div>' +
+        '<input class="fp-q" id="popQ" placeholder="Search…" value="' +
+        esc(S.popQ || '') +
+        '" oninput="S.popQ=this.value;renderPanelList()"><div id="fpList" class="fp-list"></div>';
+      renderPanelList();
+    }
+
+    function renderPanelList() {
+      var q = (S.popQ || '').toLowerCase(),
+        k = S.pop;
+      S.popOpts = withDraft(function () {
+        return popOptions(k);
+      }).filter(function (o) {
+        return !q || o.t.toLowerCase().indexOf(q) >= 0;
+      });
+      document.getElementById('fpList').innerHTML =
+        S.popOpts
+          .map(function (o, i) {
+            return (
+              '<label><input type="checkbox" ' +
+              (o.on ? 'checked' : '') +
+              ' onchange="panelToggle(' +
+              i +
+              ')"><span>' +
+              esc(o.t) +
+              '</span><small>' +
+              o.n.toLocaleString('en-GB') +
+              '</small></label>'
+            );
+          })
+          .join('') || '<label class="novals"><span>No values</span></label>';
+    }
+
+    function panelPick(k) {
+      S.pop = k;
+      S.popQ = '';
+      renderPanel();
+    }
+
+    function panelToggle(i) {
+      var k = S.pop,
+        o = S.popOpts[i],
+        box = isSF(k) ? S.draft.SF : S.draft.F,
+        sel = (box[k] = box[k] || []);
+      var ix = sel.indexOf(o.v);
+      if (ix >= 0) sel.splice(ix, 1);
+      else sel.push(o.v);
+      if (!sel.length) delete box[k];
+      var l = document.querySelector('.fp-l button.on');
+      if (l) {
+        var n = draftCount(k);
+        l.innerHTML = esc(fDefOf(k).t) + (n ? '<span>' + n + '</span>' : '');
+      }
+    }
+
+    function panelAll(on) {
+      var k = S.pop,
+        box = isSF(k) ? S.draft.SF : S.draft.F;
+      if (on) {
+        var sel = (box[k] = box[k] || []);
+        S.popOpts.forEach(function (o) {
+          if (sel.indexOf(o.v) < 0) sel.push(o.v);
+        });
+      } else delete box[k];
+      renderPanel();
+    }
+
+    function panelReset() {
+      S.draft = { F: {}, SF: {}, social: 'all' };
+      renderPanel();
+    }
+
+    function panelApply() {
+      S.F = S.draft.F;
+      S.SF = S.draft.SF;
+      S.social = S.draft.social;
+      changed();
+    }
+
+    document.addEventListener('mousedown', function (e) {
+      if (S.panel && !e.target.closest('.fwrap')) closePanel();
+      if (!e.target.closest('.gs')) document.getElementById('gres').classList.remove('open');
+    });
+  </script>
+  <!-- app/matrix/matrix.js -->
+  <script>
+    /* Draws the matrix for the current view */
+    function scopeText() {
+      var u = S.units.length ? S.units.map(unitLabel).join(', ') : 'All service units';
+      var p = S.pipes.length
+        ? S.pipes
+            .slice()
+            .sort()
+            .map(function (k) {
+              return 'Pipeline ' + k;
+            })
+            .join(', ')
+        : 'All pipelines';
+      return u + ' · ' + p;
+    }
+
+    function filterText() {
+      var parts = [];
+      activeF().forEach(function (f) {
+        parts.push(
+          f.t +
+            ': ' +
+            S.F[f.k]
+              .map(function (v) {
+                return f.lab ? f.lab(v) : cap(v);
+              })
+              .join(', ')
+        );
+      });
+      if (S.social !== 'all') parts.push('Social media: ' + (S.social === 'yes' ? 'yes' : 'no'));
+      activeSF().forEach(function (f) {
+        parts.push(f.t + ': ' + S.SF[f.k].join(', '));
+      });
+      return parts.join(' · ');
+    }
+
+    function render() {
+      var main = document.getElementById('main');
+      if (!S.acc.length) return;
+      var def = MAPS[S.view];
+      var data = S.acc.filter(function (a) {
+        return def.filter(a) && pass(a);
+      });
+      var ft = filterText();
+      var h =
+        '<div class="head"><div><h1>' +
+        esc(def.title) +
+        '</h1><div class="meta">' +
+        esc(scopeText()) +
+        (ft ? ' · ' + esc(ft) : '') +
+        '</div></div></div>';
+      if (!data.length) {
+        main.innerHTML =
+          h +
+          '<div class="empty"><div class="empty-icon">🔍</div><p>No accounts for this selection.</p><p class="hint">Try another service unit, pipeline or filter.</p></div>';
+        return;
+      }
+
+      var cells = {},
+        rowT = {},
+        colT = {};
+      data.forEach(function (a) {
+        var p = def.place(a),
+          k = p[0] + '§' + p[1];
+        (cells[k] = cells[k] || []).push(a);
+        rowT[p[0]] = (rowT[p[0]] || 0) + 1;
+        colT[p[1]] = (colT[p[1]] || 0) + 1;
+      });
+      var rows = def.rows.filter(function (x) {
+        return !x.opt || rowT[x.k];
+      });
+      var cols = def.cols.filter(function (x) {
+        return !x.opt || colT[x.k];
+      });
+      var max = 0;
+      Object.keys(cells).forEach(function (k) {
+        max = Math.max(max, cells[k].length);
+      });
+
+      h +=
+        '<div class="matrix"><table class="grid"><thead><tr><th class="yl"></th><th class="xl"></th><th class="xl" colspan="' +
+        cols.length +
+        '">' +
+        esc(def.x) +
+        ' →</th><th class="xl"></th></tr>';
+      h +=
+        '<tr><th class="yl"></th><th class="xl" style="vertical-align:bottom;text-align:left">' +
+        esc(def.y) +
+        ' ↓</th>' +
+        cols
+          .map(function (c) {
+            return '<th class="col">' + esc(c.t) + '</th>';
+          })
+          .join('') +
+        '<th class="tot">Total</th></tr></thead><tbody>';
+      rows.forEach(function (rw, i) {
+        h +=
+          '<tr>' +
+          (i === 0 ? '<th class="yl" rowspan="' + rows.length + '"><div>' + esc(def.y) + '</div></th>' : '') +
+          '<th class="row">' +
+          esc(rw.t) +
+          (rw.s ? '<small>' + esc(rw.s) + '</small>' : '') +
+          '</th>';
+        cols.forEach(function (c) {
+          var list = cells[rw.k + '§' + c.k] || [],
+            n = list.length,
+            key = String(rw.k) + '§' + String(c.k);
+          var hl = S.hl && S.hl.v === S.view && S.hl.key === key;
+          if (!n) {
+            h += '<td class="c zero' + (hl ? ' hl' : '') + '" data-key="' + esc(key) + '">–</td>';
+            return;
+          }
+          var al = max ? 0.06 + 0.84 * (n / max) : 0,
+            dark = al > 0.5;
+          var sel = S.cell && S.cell.key === key;
+          h +=
+            '<td class="c' +
+            (sel ? ' sel' : '') +
+            (hl ? ' hl' : '') +
+            '" data-key="' +
+            esc(key) +
+            '" style="background:rgba(var(--heat-rgb),' +
+            al.toFixed(3) +
+            ');color:' +
+            (dark ? 'var(--heat-text-dark)' : 'var(--heat-text-light)') +
+            '"><button onclick="openCell(\'' +
+            esc(String(rw.k)) +
+            "','" +
+            esc(String(c.k)) +
+            '\')" title="' +
+            esc(
+              n.toLocaleString('en-GB') +
+                (n === 1 ? ' account' : ' accounts') +
+                ' · ' +
+                rw.t +
+                ' × ' +
+                c.t +
+                ' (click to see them)'
+            ) +
+            '">' +
+            n.toLocaleString('en-GB') +
+            '</button></td>';
+        });
+        h += '<td class="tot">' + (rowT[rw.k] || 0).toLocaleString('en-GB') + '</td></tr>';
+      });
+      h +=
+        '<tr class="sum"><th class="yl"></th><th>Total</th>' +
+        cols
+          .map(function (c) {
+            return '<td class="tot">' + (colT[c.k] || 0).toLocaleString('en-GB') + '</td>';
+          })
+          .join('') +
+        '<td class="tot grand"><b>' +
+        data.length.toLocaleString('en-GB') +
+        '</b> acc.</td></tr>';
+      h += '</tbody></table></div>';
+      if (S.cell && !cells[S.cell.key]) S.cell = null;
+      if (S.cell) {
+        var pk = S.cell.key.split('§'),
+          rw0 = rows.filter(function (x) {
+            return String(x.k) === pk[0];
+          })[0],
+          cl0 = cols.filter(function (x) {
+            return String(x.k) === pk[1];
+          })[0];
+        S.list = cells[S.cell.key].slice();
+        S.listMeta =
+          def.title + ' › ' + def.y + ': ' + (rw0 ? rw0.t : pk[0]) + ' × ' + def.x + ': ' + (cl0 ? cl0.t : pk[1]);
+        h += listBlock(S.listMeta, true);
+      } else if (S.view === 4) {
+        S.list = data.slice();
+        S.listMeta = 'All accounts';
+        h += listBlock('All accounts in this selection · click a number above to narrow the list', false);
+      } else h += '<p class="hint">Click a number to see its accounts below.</p>';
+      main.innerHTML = h;
+      if (S.list && (S.cell || S.view === 4)) renderList();
+    }
+  </script>
+  <!-- app/table/table.js -->
+  <script>
+    /* Account table under the matrix: sort, filter per column, show more */
+    /* ---------- account table (under the matrix): sortable + filterable headers ---------- */
+    var TCOLS = [
+      {
+        k: 'name',
+        t: 'Account',
+        g: function (a) {
+          return a.name;
+        }
+      },
+      {
+        k: 'su',
+        t: 'Service unit',
+        g: function (a) {
+          return unitLabel(a.su);
+        }
+      },
+      {
+        k: 'cls',
+        t: 'Classification',
+        g: function (a) {
+          return cap(a.cls);
+        },
+        s: function (a) {
+          return a.clsOrder == null ? 99 : a.clsOrder;
+        }
+      },
+      {
+        k: 'cat',
+        t: 'Category',
+        g: function (a) {
+          return cap(a.category);
+        }
+      },
+      {
+        k: 'ind',
+        t: 'Industry',
+        g: function (a) {
+          return cap(a.industry);
+        }
+      },
+      {
+        k: 'country',
+        t: 'Country',
+        g: function (a) {
+          return cap(a.country);
+        }
+      },
+      {
+        k: 'owner',
+        t: 'Owner',
+        g: function (a) {
+          return cap(a.owner);
+        }
+      },
+      {
+        k: 'phase',
+        t: 'Phase',
+        g: function (a) {
+          return a.phase;
+        }
+      },
+      {
+        k: 'pipe',
+        t: 'Pipeline',
+        g: function (a) {
+          return a.pipe ? String(a.pipe) : '';
+        },
+        s: function (a) {
+          return a.pipe || 9;
+        }
+      },
+      {
+        k: 'postn',
+        t: 'Post-P1 #',
+        g: function (a) {
+          return a.postN ? String(a.postN) : '';
+        },
+        s: function (a) {
+          return a.postN;
+        },
+        num: 1
+      },
+      {
+        k: 'postv',
+        t: 'Post-P1 value',
+        g: function (a) {
+          return a.postV ? fmtMoney(a.postV, a.cur) : '';
+        },
+        s: function (a) {
+          return a.postV;
+        },
+        num: 1,
+        fv: function (a) {
+          return a.fv.val;
+        }
+      },
+      {
+        k: 'lm',
+        t: 'Last meeting',
+        g: function (a) {
+          return a.lmDate ? dateAgo(a.lmDate, false, a.lastMeeting) : '';
+        },
+        s: function (a) {
+          return a.lastMeeting == null ? 1e9 : a.lastMeeting;
+        },
+        fv: function (a) {
+          return lmBucket(a.lastMeeting);
+        }
+      },
+      {
+        k: 'valid',
+        t: 'Last validated',
+        g: function (a) {
+          return a.validDate ? dateAgo(a.validDate, false, a.validDays) : '';
+        },
+        s: function (a) {
+          return a.validDays == null ? 1e9 : a.validDays;
+        },
+        fv: function (a) {
+          return a.fv.valid;
+        }
+      },
+      {
+        k: 'prj',
+        t: 'Projects',
+        g: function (a) {
+          return projSummary(a);
+        },
+        s: function (a) {
+          return -a.projects.length;
+        },
+        fv: function (a) {
+          return a.fv.proj;
+        }
+      },
+      {
+        k: 'soc',
+        t: 'Social',
+        g: function (a) {
+          return socialSummary(a);
+        },
+        s: function (a) {
+          return a.social.length ? 0 : 1;
+        },
+        fv: function (a) {
+          return a.social.length ? 'Has social media' : 'None';
+        }
+      }
+    ];
+
+    function lmBucket(d) {
+      return d == null
+        ? 'Never'
+        : d < 91
+          ? '< 3 months'
+          : d < 183
+            ? '3–6 months'
+            : d < 365
+              ? '6–12 months'
+              : d < 730
+                ? '1–2 years'
+                : '2+ years';
+    }
+
+    function projSummary(a) {
+      if (!a.projects.length) return '';
+      var names = a.projects.map(function (e) {
+        var n = projName(e),
+          ph = phaseKey(cellBy(e.s, e.j, 'Phase_Group'));
+        return (n || '') + (ph ? (n ? ' (' + ph + ')' : ph) : '');
+      });
+      return a.projects.length + ' · ' + names.join(', ');
+    }
+
+    function socialSummary(a) {
+      return a.social
+        .map(function (e) {
+          var p = cellBy(e.s, e.j, 'pslab_platformname') || cellBy(e.s, e.j, 'platform'),
+            f = cellBy(e.s, e.j, 'pslab_followersname');
+          return [p, f].filter(Boolean).join(' ');
+        })
+        .join(', ');
+    }
+
+    function colDef(k) {
+      return TCOLS.filter(function (c) {
+        return c.k === k;
+      })[0];
+    }
+
+    function colVal(c, a) {
+      var v = c.fv ? c.fv(a) : c.g(a);
+      return v === '' || v == null ? '(blank)' : String(v);
+    }
+
+    function openCell(rk, ck) {
+      var key = rk + '§' + ck;
+      if (S.cell && S.cell.key === key) {
+        S.cell = null;
+        S.g = newGrid();
+        render();
+        return;
+      }
+      S.cell = { key: key };
+      S.g = newGrid();
+      render();
+      var el = document.getElementById('inl');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function newGrid() {
+      return { sort: { k: 'lm', d: 1 }, cf: {}, q: '', limit: 100 };
+    }
+
+    function closeCell() {
+      S.cell = null;
+      S.g = newGrid();
+      render();
+    }
+
+    function listBlock(meta, closable) {
+      return (
+        '<div class="inl" id="inl"><div class="inh"><div><h2 id="gCount"></h2><div class="meta">' +
+        esc(meta) +
+        '</div></div>' +
+        '<div class="dtools"><input id="dSearch" placeholder="Search in this table…" value="' +
+        esc(S.g.q) +
+        '" oninput="S.g.q=this.value;S.g.limit=100;renderList()"><button class="btn" onclick="exportList(\'xlsx\')">Excel</button><button class="btn" onclick="exportList(\'pdf\')">PDF</button>' +
+        (closable ? '<button class="x2" onclick="closeCell()" title="Close">×</button>' : '') +
+        '</div></div><div class="tw" id="tw"></div><div class="hpop" id="hpop"></div></div>'
+      );
+    }
+
+    function gridRows(skipK) {
+      var q = (S.g.q || '').toLowerCase().trim();
+      var list = S.list.filter(function (a) {
+        if (q && a.lname.indexOf(q) < 0 && a.owner.toLowerCase().indexOf(q) < 0 && a.country.indexOf(q) < 0)
+          return false;
+        for (var k in S.g.cf) {
+          if (k === skipK) continue;
+          var sel = S.g.cf[k];
+          if (sel && sel.length && sel.indexOf(colVal(colDef(k), a)) < 0) return false;
+        }
+        return true;
+      });
+      return list;
+    }
+
+    function shownList() {
+      var list = gridRows(),
+        col = colDef(S.g.sort.k) || TCOLS[0],
+        d = S.g.sort.d,
+        key = col.s || col.g;
+      return list.sort(function (a, b) {
+        var x = key(a),
+          y = key(b);
+        if (typeof x === 'string' || typeof y === 'string')
+          return String(x).localeCompare(String(y)) * d || a.name.localeCompare(b.name);
+        return (x - y) * d || a.name.localeCompare(b.name);
+      });
+    }
+
+    function renderList() {
+      var box = document.getElementById('tw');
+      if (!box) return;
+      var list = shownList();
+      S._shown = list;
+      var c = document.getElementById('gCount');
+      if (c) c.textContent = list.length.toLocaleString('en-GB') + ' account' + (list.length === 1 ? '' : 's');
+      var h =
+        '<table class="tb"><thead><tr><th class="cnt" title="Row number">#</th>' +
+        TCOLS.map(function (c) {
+          var f = S.g.cf[c.k] && S.g.cf[c.k].length,
+            so = S.g.sort.k === c.k;
+          return (
+            '<th class="' +
+            (so || f ? 's' : '') +
+            '" onclick="openHead(\'' +
+            c.k +
+            '\', this)">' +
+            esc(c.t) +
+            (so ? (S.g.sort.d > 0 ? ' ↑' : ' ↓') : '') +
+            (f ? ' <i class="fdot">●</i>' : '') +
+            '</th>'
+          );
+        }).join('') +
+        '</tr></thead><tbody>';
+      list.slice(0, S.g.limit).forEach(function (a, n) {
+        h +=
+          '<tr class="' +
+          (S.hl && S.hl.id === a.id ? 'hl' : '') +
+          '" onclick="openDetail(' +
+          a.i +
+          ')"><td class="cnt">' +
+          (n + 1) +
+          '</td>' +
+          TCOLS.map(function (c) {
+            var v = c.g(a);
+            return (
+              '<td class="' +
+              (c.num ? 'num' : '') +
+              '" title="' +
+              esc(v) +
+              '">' +
+              (c.k === 'name' ? '<b>' + esc(v) + '</b>' : esc(v)) +
+              '</td>'
+            );
+          }).join('') +
+          '</tr>';
+      });
+      h += '</tbody></table>';
+      if (!list.length)
+        h += '<p class="hint nomatch">No account matches. Try clearing the search or a column filter.</p>';
+      if (list.length > S.g.limit)
+        h +=
+          '<button class="more" onclick="S.g.limit+=200;renderList()">Show more (' +
+          (list.length - S.g.limit).toLocaleString('en-GB') +
+          ' left)</button>';
+      box.innerHTML = h;
+      var hl = box.querySelector('tr.hl');
+      if (hl) hl.scrollIntoView({ block: 'nearest' });
+    }
+
+    /* header menu: sort + filter by the values of that column */
+    function openHead(k, th) {
+      var pop = document.getElementById('hpop');
+      if (!pop) return;
+      if (S.hk === k && pop.classList.contains('open')) {
+        closeHead();
+        return;
+      }
+      S.hk = k;
+      S.hq = '';
+      S.hsel = (S.g.cf[k] || []).slice();
+      var wrap = document.getElementById('inl').getBoundingClientRect(),
+        r = th.getBoundingClientRect();
+      pop.style.left = Math.max(0, Math.min(r.left - wrap.left, wrap.width - 280)) + 'px';
+      pop.style.top = r.bottom - wrap.top + 2 + 'px';
+      var c = colDef(k);
+      pop.innerHTML =
+        '<div class="hp-s"><button onclick="headSort(1)">Sort ascending ↑</button><button onclick="headSort(-1)">Sort descending ↓</button></div>' +
+        '<div class="fp-t">Filter ' +
+        esc(c.t) +
+        '<span class="ml"></span><button class="lnk" onclick="headAll(1)">all</button><button class="lnk" onclick="headAll(0)">none</button></div>' +
+        '<input class="fp-q" placeholder="Search…" oninput="S.hq=this.value;renderHeadList()"><div class="fp-list" id="hpList"></div>' +
+        '<div class="fp-f"><button class="lnk" onclick="S.hsel=[];headApply()">Clear</button><span class="ml"></span><button class="btn" onclick="headApply()">Apply</button></div>';
+      pop.classList.add('open');
+      renderHeadList();
+    }
+
+    function renderHeadList() {
+      var c = colDef(S.hk),
+        cnt = {},
+        q = (S.hq || '').toLowerCase();
+      gridRows(S.hk).forEach(function (a) {
+        var v = colVal(c, a);
+        cnt[v] = (cnt[v] || 0) + 1;
+      });
+      S.hsel.forEach(function (v) {
+        if (!(v in cnt)) cnt[v] = 0;
+      });
+      var keys = Object.keys(cnt);
+      if (c.fv) {
+        var ord = FDEF.filter(function (f) {
+          return f.k === { postv: 'val', valid: 'valid', prj: 'proj' }[c.k];
+        })[0];
+        var o =
+          (ord && ord.order) ||
+          (c.k === 'lm' ? ['< 3 months', '3–6 months', '6–12 months', '1–2 years', '2+ years', 'Never'] : null);
+        if (o)
+          keys.sort(function (x, y) {
+            return (o.indexOf(x) < 0 ? 99 : o.indexOf(x)) - (o.indexOf(y) < 0 ? 99 : o.indexOf(y));
+          });
+        else keys.sort();
+      } else
+        keys.sort(function (x, y) {
+          return (x === '(blank)') - (y === '(blank)') || cnt[y] - cnt[x] || x.localeCompare(y);
+        });
+      S.hopts = keys.filter(function (v) {
+        return !q || v.toLowerCase().indexOf(q) >= 0;
+      });
+      document.getElementById('hpList').innerHTML =
+        S.hopts
+          .slice(0, 400)
+          .map(function (v, i) {
+            return (
+              '<label><input type="checkbox" ' +
+              (S.hsel.indexOf(v) >= 0 ? 'checked' : '') +
+              ' onchange="headToggle(' +
+              i +
+              ')"><span>' +
+              esc(v) +
+              '</span><small>' +
+              cnt[v].toLocaleString('en-GB') +
+              '</small></label>'
+            );
+          })
+          .join('') || '<label class="novals"><span>No values</span></label>';
+    }
+
+    function headToggle(i) {
+      var v = S.hopts[i],
+        ix = S.hsel.indexOf(v);
+      if (ix >= 0) S.hsel.splice(ix, 1);
+      else S.hsel.push(v);
+    }
+
+    function headAll(on) {
+      S.hsel = on ? S.hopts.slice() : [];
+      renderHeadList();
+    }
+
+    function headSort(d) {
+      S.g.sort = { k: S.hk, d: d };
+      closeHead();
+      renderList();
+    }
+
+    function headApply() {
+      if (S.hsel.length) S.g.cf[S.hk] = S.hsel.slice();
+      else delete S.g.cf[S.hk];
+      S.g.limit = 100;
+      closeHead();
+      renderList();
+    }
+
+    function closeHead() {
+      var p = document.getElementById('hpop');
+      if (p) p.classList.remove('open');
+      S.hk = null;
+    }
+
+    // clicking anywhere else closes the column menu
+    document.addEventListener('mousedown', function (e) {
+      if (S.hk && !e.target.closest('#hpop') && !e.target.closest('.tb th')) closeHead();
+    });
+  </script>
+  <!-- app/details/details.js -->
+  <script>
+    /* Account details side panel */
+    /** noAgo: leave out the "(N days ago)" after dates (used by the Excel export). */
+    function fmtVal(h, v, a, noAgo) {
+      if (v == null || v === '') return '—';
+      var k = hKey(h);
+      if (typeof v === 'number') {
+        if (/date|creation/.test(k) && v > 20000) return noAgo ? fmtXl(v, true) : dateAgo(v, true);
+        if (/days$/.test(k)) return Math.round(v).toLocaleString('en-GB') + ' days';
+        if (/amount|value|revenue|price|budget/.test(k)) return fmtMoney(v, a && a.cur);
+        return (Math.round(v * 100) / 100).toLocaleString('en-GB');
+      }
+      return String(v);
+    }
+
+    function cellHtml(h, v, a) {
+      var s = fmtVal(h, v, a);
+      if (/serviceunit/.test(hKey(h)) && typeof v === 'string') return esc(unitLabel(suKey(v)));
+      if (typeof v === 'string' && /^https?:\/\//i.test(v))
+        return (
+          '<a href="' +
+          esc(v) +
+          '" target="_blank" rel="noopener">' +
+          esc(v.replace(/^https?:\/\/(www\.)?/, '').replace(/\?.*$/, '')) +
+          '</a>'
+        );
+      return esc(s);
+    }
+
+    var DET_HIDE = {};
+    [
+      'name',
+      'classification',
+      'classificationorder',
+      'category',
+      'categoryorder',
+      'originalcategory',
+      'industry',
+      'country',
+      'serviceunit',
+      'owneridname',
+      'metin',
+      'lastmeetingdate',
+      'lastmeetingindate',
+      'lastmeetingoutdate',
+      'lastmeetingdays',
+      'lastcontact1date',
+      'lastprojectdatein',
+      'lastprojectdays',
+      'phasegroup',
+      'pipeline',
+      'prep1count',
+      'postp1count',
+      'postp1amount',
+      'currencysymbol',
+      'accountcreation',
+      'accountcreateddays',
+      'classification2',
+      'username'
+    ].forEach(function (k) {
+      DET_HIDE[k] = 1;
+    });
+
+    var NAME_KEYS = ['projectname', 'opportunityname', 'name', 'topic', 'title', 'project'];
+
+    function nameCol(s) {
+      if (s._nc === undefined) {
+        s._nc = -1;
+        for (var i = 0; i < s.hk.length; i++)
+          if (
+            NAME_KEYS.indexOf(s.hk[i]) >= 0 ||
+            (/name/.test(s.hk[i]) && !/serviceunit|owner|user/.test(s.hk[i]))
+          ) {
+            s._nc = i;
+            break;
+          }
+      }
+      return s._nc;
+    }
+
+    function projName(e) {
+      var s = S.sheets[e.s],
+        c = nameCol(s);
+      return c < 0 ? '' : cv(e.s, c, e.j) || '';
+    }
+
+    function rowsTable(entries, a) {
+      if (!entries.length) return '<p class="meta">None.</p>';
+      var si = entries[0].s,
+        s = S.sheets[si];
+      // no ids, no columns that are empty for every row; a project/opportunity name column goes first
+      var cols = s.cols
+        .map(function (c, i) {
+          return i;
+        })
+        .filter(function (i) {
+          return (
+            !/id$/.test(s.hk[i]) &&
+            ((s.role === 'projects' && i === nameCol(s)) ||
+              entries.some(function (e) {
+                return cv(e.s, i, e.j) != null;
+              }))
+          );
+        });
+      var nc = s.role === 'projects' ? nameCol(s) : -1;
+      cols.sort(function (x, y) {
+        return (x === nc ? -1 : 0) - (y === nc ? -1 : 0);
+      });
+      var h =
+        '<div class="tw"><table class="tb"><thead><tr><th class="cnt">#</th>' +
+        cols
+          .map(function (i) {
+            return '<th>' + esc(i === nc ? 'Project name' : pretty(s.cols[i].h)) + '</th>';
+          })
+          .join('') +
+        '</tr></thead><tbody>';
+      entries.forEach(function (e, n) {
+        h +=
+          '<tr><td class="cnt">' +
+          (n + 1) +
+          '</td>' +
+          cols
+            .map(function (i) {
+              return '<td>' + cellHtml(s.cols[i].h, cv(e.s, i, e.j), a) + '</td>';
+            })
+            .join('') +
+          '</tr>';
+      });
+      return h + '</tbody></table></div>';
+    }
+
+    function locate(a) {
+      var v = viewOf(a);
+      var def = MAPS[v],
+        p = def.place(a),
+        key = String(p[0]) + '§' + String(p[1]);
+      var rw = def.rows.filter(function (x) {
+          return String(x.k) === String(p[0]);
+        })[0],
+        cl = def.cols.filter(function (x) {
+          return String(x.k) === String(p[1]);
+        })[0];
+      return {
+        v: v,
+        key: key,
+        txt: def.title + ' › ' + def.y + ' ' + (rw ? rw.t : p[0]) + ' × ' + def.x + ' ' + (cl ? cl.t : p[1])
+      };
+    }
+
+    function openDetail(i) {
+      var a = S.acc[i];
+      if (!a) return;
+      S.detail = a.id;
+      document.getElementById('aTitle').textContent = a.name;
+      document.getElementById('aMeta').textContent = [unitLabel(a.su), cap(a.cls), cap(a.category)]
+        .filter(Boolean)
+        .join(' · ');
+      var loc = locate(a);
+      var kv = [
+        ['Classification', cap(a.cls)],
+        ['Category', cap(a.category)],
+        ['Industry', cap(a.industry)],
+        ['Country', cap(a.country)],
+        ['Service unit', unitLabel(a.su)],
+        ['Owner', cap(a.owner)],
+        ['Met in', cap(a.metIn)],
+        ['Last meeting', a.lmDate ? dateAgo(a.lmDate, false, a.lastMeeting) : 'never'],
+        ['Last contact', a.lcDate ? dateAgo(a.lcDate, false, a.lastContact) : 'never'],
+        ['Last project', a.lpDate ? dateAgo(a.lpDate, false, a.lastProject) : 'never'],
+        ['Pipeline', a.pipe ? PIPES[a.pipe - 1].t + ' — ' + PIPES[a.pipe - 1].s : '—'],
+        ['Pre-P1 projects', a.preN],
+        ['Post-P1 projects', a.postN],
+        ['Post-P1 value', a.postV ? fmtMoney(a.postV, a.cur) : '—'],
+        ['Projects in list', a.projects.length + (a.projPhases.length ? ' · ' + a.projPhases.join(', ') : '')],
+        ['Social media', a.social.length ? socialSummary(a) : 'no'],
+        ['Last validated on', a.validDate ? dateAgo(a.validDate, false, a.validDays) : '—'],
+        ['Account created', dateAgo(num(F(a, 'account_creation'))) || '—']
+      ];
+      var h =
+        '<div class="loc"><span>' +
+        esc(loc.txt) +
+        '</span><button onclick="goTo(' +
+        a.i +
+        ')">Show on map</button></div>';
+      h +=
+        '<h3>Overview</h3><div class="kv">' +
+        kv
+          .map(function (x) {
+            return '<div>' + esc(x[0]) + '</div><div>' + esc(x[1] === '' || x[1] == null ? '—' : x[1]) + '</div>';
+          })
+          .join('') +
+        '</div>';
+      // projects
+      var pr = a.projects.slice().sort(function (x, y) {
+        return String(cellBy(y.s, y.j, 'Phase_Group')).localeCompare(String(cellBy(x.s, x.j, 'Phase_Group')));
+      });
+      h += '<h3>Projects (' + pr.length + ')</h3>' + groupTables(pr, a);
+      h += '<h3>Social media (' + a.social.length + ')</h3>' + groupTables(a.social, a);
+      if (a.lists.length) h += '<h3>Other linked rows (' + a.lists.length + ')</h3>' + groupTables(a.lists, a);
+      // any other column in the file (new query columns show up here automatically)
+      var more = [];
+      S.sheets.forEach(function (s) {
+        if (s.role !== 'accounts' && s.role !== 'merge') return;
+        var j = s.role === 'accounts' ? a.i : a.mr[s.si];
+        s.cols.forEach(function (c, ci) {
+          if (DET_HIDE[s.hk[ci]] || /id$/.test(s.hk[ci]) || /validat/.test(s.hk[ci])) return;
+          more.push(
+            '<div>' +
+              esc(pretty(c.h)) +
+              '</div><div>' +
+              (j == null ? '—' : cellHtml(c.h, cv(s.si, ci, j), a)) +
+              '</div>'
+          );
+        });
+      });
+      if (more.length) h += '<h3>More details</h3><div class="kv">' + more.join('') + '</div>';
+      document.getElementById('aBody').innerHTML = h;
+      document.getElementById('aBody').scrollTop = 0;
+      openDrawer();
+    }
+
+    function groupTables(entries, a) {
+      if (!entries.length) return '<p class="meta">None.</p>';
+      var by = {};
+      entries.forEach(function (e) {
+        (by[e.s] = by[e.s] || []).push(e);
+      });
+      return Object.keys(by)
+        .map(function (si) {
+          return rowsTable(by[si], a);
+        })
+        .join('');
+    }
+
+    /* open / close the panel (the grey layer behind it is #dim) */
+    function openDrawer() {
+      document.getElementById('drawer').classList.add('open');
+      document.getElementById('dim').classList.add('open');
+    }
+
+    function closeDrawer() {
+      S.detail = null;
+      document.getElementById('drawer').classList.remove('open');
+      document.getElementById('dim').classList.remove('open');
+    }
+  </script>
+  <!-- app/search/search.js -->
+  <script>
+    /* Search box at the top + jump to an account on the map */
+    function gSearch() {
+      var q = document.getElementById('gq').value.toLowerCase().trim(),
+        box = document.getElementById('gres');
+      if (q.length < 2 || !S.acc.length) {
+        box.classList.remove('open');
+        return;
+      }
+      var res = S.acc.filter(function (a) {
+        return a.lname.indexOf(q) >= 0;
+      });
+      res.sort(function (a, b) {
+        return (b.lname.indexOf(q) === 0) - (a.lname.indexOf(q) === 0) || a.name.length - b.name.length;
+      });
+      S.gres = res.slice(0, 15);
+      S.gAct = 0;
+      box.innerHTML =
+        S.gres
+          .map(function (a, i) {
+            return (
+              '<button class="' +
+              (i === 0 ? 'act' : '') +
+              '" onclick="goTo(' +
+              a.i +
+              ')"><b>' +
+              esc(a.name) +
+              '</b><small>' +
+              esc(unitLabel(a.su)) +
+              ' · ' +
+              esc(locate(a).txt) +
+              '</small></button>'
+            );
+          })
+          .join('') +
+          (res.length > 15 ? '<div class="none">' + (res.length - 15) + ' more — keep typing</div>' : '') ||
+        '<div class="none">No account found.</div>';
+      box.classList.add('open');
+    }
+
+    function gKey(e) {
+      var box = document.getElementById('gres'),
+        btns = box.querySelectorAll('button');
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (!btns.length) return;
+        S.gAct = (S.gAct + (e.key === 'ArrowDown' ? 1 : -1) + btns.length) % btns.length;
+        btns.forEach(function (b, i) {
+          b.classList.toggle('act', i === S.gAct);
+        });
+      } else if (e.key === 'Enter') {
+        if (S.gres && S.gres[S.gAct]) goTo(S.gres[S.gAct].i);
+      } else if (e.key === 'Escape') box.classList.remove('open');
+    }
+
+    function goTo(i) {
+      var a = S.acc[i];
+      if (!a) return;
+      document.getElementById('gres').classList.remove('open');
+      var loc = locate(a),
+        adj = [];
+      // only loosen what would hide this account – the numbers stay as they are otherwise
+      if (S.units.length && S.units.indexOf(a.su) < 0) {
+        if (S.multiUnit) S.units.push(a.su);
+        else S.units = [a.su];
+        adj.push('service unit ' + unitLabel(a.su));
+      }
+      if (S.pipes.length && S.pipes.indexOf(a.pipe) < 0) {
+        if (a.pipe) S.pipes.push(a.pipe);
+        else S.pipes = [];
+        adj.push('pipeline');
+      }
+      FDEF.forEach(function (f) {
+        var sel = S.F[f.k];
+        if (sel && sel.length && sel.indexOf(a.fv[f.k]) < 0) {
+          delete S.F[f.k];
+          adj.push(f.t.toLowerCase());
+        }
+      });
+      if ((S.social === 'yes' && !a.social.length) || (S.social === 'no' && a.social.length)) {
+        S.social = 'all';
+        S.SF = {};
+        adj.push('social media');
+      } else if (!socialMatch(a)) {
+        S.SF = {};
+        adj.push('social filters');
+      }
+      S.view = loc.v;
+      S.hl = { id: a.id, v: loc.v, key: loc.key };
+      closePanel();
+      closeDrawer();
+      S.cell = { key: loc.key };
+      S.g = newGrid();
+      renderAll();
+      setTimeout(function () {
+        var el = document.querySelector('td.hl');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 30);
+      toast((adj.length ? 'Filters loosened to show it (' + adj.join(', ') + ') · ' : '') + loc.txt + '');
+    }
+  </script>
+  <!-- app/export/export.js -->
+  <script>
+    /* Excel / PDF export */
+    var XLSX_URL = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+
+    var JSPDF_URL = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+
+    var AUTOTABLE_URL =
+      'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js';
+
+    function expRecord(a) {
+      return {
+        Account: a.name,
+        'Service unit': unitLabel(a.su),
+        Classification: cap(a.cls),
+        Category: cap(a.category),
+        'Sub-category': cap(a.orig),
+        Industry: cap(a.industry),
+        Country: cap(a.country),
+        Owner: cap(a.owner),
+        'Met in': a.metIn,
+        'Phase (latest)': a.phase,
+        Pipeline: a.pipe ? 'Pipeline ' + a.pipe : '',
+        'Pre-P1 projects': a.preN,
+        'Post-P1 projects': a.postN,
+        'Post-P1 value': a.postV,
+        Currency: a.cur,
+        'Last meeting': a.lmDate ? fmtXl(a.lmDate) : 'never',
+        'Last project': a.lpDate ? fmtXl(a.lpDate) : 'never',
+        'Last contact': a.lcDate ? fmtXl(a.lcDate) : 'never',
+        'Last validated on': a.validDate ? fmtXl(a.validDate) : '',
+        'Projects in list': a.projects.length,
+        'Project names': a.projects.map(projName).filter(Boolean).join(', '),
+        'Project phases': a.projPhases.join(', '),
+        'Social media': socialSummary(a),
+        'Social links': a.social
+          .map(function (e) {
+            return cellBy(e.s, e.j, 'pslab_link') || '';
+          })
+          .filter(Boolean)
+          .join(' ')
+      };
+    }
+
+    var PDF_COLS = [
+      'Account',
+      'Service unit',
+      'Classification',
+      'Category',
+      'Country',
+      'Owner',
+      'Phase (latest)',
+      'Pipeline',
+      'Post-P1 projects',
+      'Post-P1 value',
+      'Last meeting',
+      'Projects in list',
+      'Social media'
+    ];
+
+    function exportList(fmt) {
+      doExport(fmt, S._shown || shownList(), S.listMeta);
+    }
+
+    function doExport(fmt, list, title) {
+      if (!list.length) {
+        toast('Nothing to export');
+        return;
+      }
+      var ctx = scopeText() + (filterText() ? ' · ' + filterText() : '');
+      var stamp = new Date().toISOString().slice(0, 10);
+      var fname = ('People Pipeline - ' + title.split(' › ')[0] + ' - ' + stamp).replace(/[\\/:*?"<>|]/g, '');
+      toast('Preparing ' + (fmt === 'pdf' ? 'PDF' : 'Excel') + '…');
+      var p =
+        fmt === 'pdf'
+          ? loadScript(JSPDF_URL).then(function () {
+              return loadScript(AUTOTABLE_URL);
+            })
+          : loadScript(XLSX_URL);
+      p.then(function () {
+        var recs = list.map(expRecord);
+        if (fmt === 'xlsx') {
+          var wb = XLSX.utils.book_new();
+          var ws = XLSX.utils.json_to_sheet(recs);
+          ws['!cols'] = Object.keys(recs[0]).map(function (k) {
+            return { wch: k === 'Account' ? 40 : Math.max(12, k.length + 2) };
+          });
+          XLSX.utils.book_append_sheet(wb, ws, 'Accounts');
+          // projects of these accounts (all columns of the projects sheet)
+          var prows = [];
+          list.forEach(function (a) {
+            a.projects.forEach(function (e) {
+              var s = S.sheets[e.s],
+                o = { Account: a.name };
+              s.cols.forEach(function (c, ci) {
+                if (!/id$/.test(s.hk[ci]))
+                  o[ci === nameCol(s) ? 'Project name' : pretty(c.h)] = fmtVal(
+                    c.h,
+                    cv(e.s, ci, e.j),
+                    a,
+                    true
+                  ).replace(/^—$/, '');
+              });
+              prows.push(o);
+            });
+          });
+          if (prows.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(prows), 'Projects');
+          XLSX.utils.book_append_sheet(
+            wb,
+            XLSX.utils.aoa_to_sheet([
+              ['People Pipeline'],
+              ['View', title],
+              ['Selection', ctx],
+              ['Accounts', list.length],
+              ['Data refreshed', fmtTs(S.source.updated)],
+              ['Exported', fmtTs(Date.now())]
+            ]),
+            'Info'
+          );
+          XLSX.writeFile(wb, fname + '.xlsx');
+        } else {
+          var L = function (s) {
+            return String(s == null ? '' : s)
+              .replace(/[–—]/g, '-')
+              .replace(/›/g, '>')
+              .replace(/[≥]/g, '>=')
+              .replace(/[≤]/g, '<=')
+              .replace(/€/g, 'EUR')
+              .replace(/[^\x00-\xFF]/g, '');
+          };
+          var doc = new window.jspdf.jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(13);
+          doc.text('PEOPLE PIPELINE', 32, 34);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(9);
+          var lines = doc.splitTextToSize(
+            L(
+              title +
+                '  |  ' +
+                ctx +
+                '  |  ' +
+                list.length +
+                ' accounts  |  data refreshed ' +
+                fmtTs(S.source.updated)
+            ),
+            780
+          );
+          doc.text(lines, 32, 50);
+          doc.autoTable({
+            head: [PDF_COLS],
+            body: recs.map(function (r) {
+              return PDF_COLS.map(function (c) {
+                return L(c === 'Post-P1 value' ? (r[c] ? fmtMoney(r[c], r.Currency) : '') : r[c]);
+              });
+            }),
+            startY: 56 + lines.length * 11,
+            theme: 'grid',
+            margin: { left: 32, right: 32 },
+            styles: {
+              fontSize: 6.5,
+              cellPadding: 2.5,
+              lineColor: [217, 217, 217],
+              lineWidth: 0.4,
+              textColor: [0, 0, 0]
+            },
+            headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255], fontStyle: 'bold' },
+            columnStyles: { 0: { cellWidth: 130, fontStyle: 'bold' } }
+          });
+          doc.save(fname + '.pdf');
+        }
+      }).catch(function (e) {
+        toast('Export failed: ' + (e.message || e));
+      });
+    }
+  </script>
+  <!-- app/core/main.js -->
+  <script>
+    /* Loading, refresh and auto refresh — starts the app (keep this file last) */
+    function load(silent, msg) {
+      S.busy = true;
+      renderRefresh();
+      var keep = { detail: S.detail, cellKey: S.cell && S.cell.key };
+      S.cell = null;
+      return api('getData', [])
+        .then(function (d) {
+          build(d);
+          S.busy = false;
+          renderAll();
+          if (keep.cellKey && S.view !== 4) {
+            S.cell = { key: keep.cellKey };
+            render();
+          }
+          if (keep.detail && S.byId[keep.detail]) openDetail(S.byId[keep.detail].i);
+          if (msg) toast(msg + ' — data from ' + fmtTs(S.source.updated));
+        })
+        .catch(function (e) {
+          S.busy = false;
+          renderRefresh();
+          if (!silent || !S.acc.length)
+            document.getElementById('main').innerHTML =
+              '<div class="empty">Error: ' + esc(e.message || e) + '</div>';
+          else toast('Refresh failed: ' + (e.message || e));
+        });
+    }
+
+    function refresh() {
+      if (S.busy) return;
+      load(true, 'Refreshed');
+    }
+    // auto refresh: check the Drive file every 10 minutes, reload when it changed – and at least every hour
+    setInterval(
+      function () {
+        if (S.busy) return;
+        api('getStamp', [])
+          .then(function (st) {
+            S.checked = Date.now();
+            if (st.updated !== S.source.updated || Date.now() - (S.source.loaded || 0) > 3600 * 1000)
+              load(true, 'Data refreshed automatically');
+            else renderRefresh();
+          })
+          .catch(function () {});
+      },
+      10 * 60 * 1000
+    );
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        closePanel();
+        closeDrawer();
+      }
+    });
+
+    load(false);
+  </script>
+</body>
+</html>

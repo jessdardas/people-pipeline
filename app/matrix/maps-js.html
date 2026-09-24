@@ -1,3 +1,4 @@
+<script>
 /* The four matrix views (rows, columns, and where each account lands) */
 function catKey(c) {
   c = String(c || '')
@@ -127,3 +128,4 @@ function viewOf(a) {
   for (var v = 1; v <= 3; v++) if (MAPS[v].filter(a)) return v;
   return 4;
 }
+</script>
