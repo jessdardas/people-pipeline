@@ -135,7 +135,8 @@ function render() {
     ' ↓</th>' +
     cols
       .map(function (c) {
-        return '<th class="col">' + esc(c.t) + '</th>';
+        // every data column gets the same width; the label and Total columns only take what they need
+        return '<th class="col" style="width:' + (94 / cols.length).toFixed(2) + '%">' + esc(c.t) + '</th>';
       })
       .join('') +
     '<th class="tot">Total</th></tr></thead><tbody>';

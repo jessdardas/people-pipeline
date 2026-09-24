@@ -147,6 +147,7 @@ Also:
 | Change the font | the Google Fonts `<link>` in `app/index.html` + `--font` in `core/base-css.html` |
 | Round or square matrix cells | `--cell-radius` in `core/base-css.html` (0 = square) |
 | Space between the rows of the tables | `border-spacing` on `table.tb` in `table/table-css.html` |
+| Width of the matrix columns | all data columns share the width equally: `render()` in `matrix/matrix-js.html` (the `th.col` width) |
 | Make the matrix cells taller or shorter | `.grid td.c` and `.grid td.c button` (`height`, `min-height`) in `matrix/matrix-css.html` |
 | Change the space between cells | `border-spacing` on `table.grid` in `matrix/matrix-css.html` |
 | Change the text of a toast message | search for `toast(` in the `*-js.html` files |
