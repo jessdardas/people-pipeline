@@ -117,6 +117,7 @@ function build(d) {
     a.cur = F(a, 'CurrencySymbol') || '€';
     a.pb = String(F(a, 'classification2') == null ? '' : F(a, 'classification2'));
     var vd = S.validKey ? F(a, S.validKey) : null;
+    if (typeof vd === 'string' && /^\d+(\.\d+)?$/.test(vd.trim())) vd = Number(vd); // an Excel date number stored as text
     if (typeof vd === 'string') {
       var pd = Date.parse(vd);
       vd = isNaN(pd) ? null : pd / 864e5 + 25569;

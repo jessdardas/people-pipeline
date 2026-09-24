@@ -61,8 +61,9 @@
 }
 
 /* the table itself: square corners, rows spaced apart */
+/* no sideways scrolling: the table always fits the screen, long text wraps onto a second line */
 .tw {
-  overflow: auto;
+  overflow: visible;
 }
 table.tb {
   border-collapse: separate;
@@ -76,8 +77,8 @@ table.tb {
   font-weight: 700;
   color: var(--text-soft);
   background: var(--soft);
-  padding: 9px 12px;
-  white-space: nowrap;
+  padding: 9px 8px;
+  vertical-align: bottom;
   cursor: pointer;
   position: sticky;
   top: 0;
@@ -89,14 +90,11 @@ table.tb {
   text-underline-offset: 3px;
 }
 .tb td {
-  padding: 8px 12px;
+  padding: 8px 8px;
   background: var(--surface);
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
-  white-space: nowrap;
-  max-width: 260px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow-wrap: break-word; /* wrap between words; only a word longer than the column is split */
 }
 .tb td:first-child {
   border-left: 1px solid var(--line);
@@ -117,6 +115,7 @@ table.tb {
 .tb td.num {
   text-align: right;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap; /* keep "€ 2,500,000" on one line */
 }
 /* the # counter column */
 .tb .cnt {
@@ -198,5 +197,20 @@ table.tb {
 }
 .hpop .fp-f {
   grid-column: auto;
+}
+
+/* smaller screens: tighter table so it still fits without scrolling sideways */
+@media (max-width: 1200px) {
+  table.tb {
+    font-size: 11.5px;
+  }
+  .tb th,
+  .tb td {
+    padding-left: 5px;
+    padding-right: 5px;
+  }
+  .tb td {
+    overflow-wrap: anywhere;
+  }
 }
 </style>
