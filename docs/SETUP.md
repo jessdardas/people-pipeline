@@ -33,6 +33,22 @@ git commit -m "What I changed"
 git push
 ```
 
+## Hourly refresh (one time only)
+
+The app re-reads the Excel file every hour by itself, so the page opens quickly with fresh data. Switch it on once:
+
+1. `clasp push` (so the new code is in Apps Script).
+2. In the Apps Script editor, open **server/Code**, choose **setupHourlyRefresh** in the function menu at the top, and click **Run**.
+3. Google asks for permission the first time: **Review permissions →** your account **→ Allow**.
+
+To check it's on, open **Triggers** (the clock icon on the left). You should see `refreshData`, running every hour. Running `setupHourlyRefresh` again is safe; it never creates a second trigger.
+
+How the data stays up to date:
+- **Every hour** the trigger reads the newest "people pipeline.xlsx" in Drive and stores the result for 6 hours.
+- **When the file changes** (a new upload), the next page load reads it right away; it doesn't wait for the hour.
+- **Open pages** check every 10 minutes and reload when the file changed, and at least once an hour.
+- The Excel file itself comes from the query export. That export must be refreshed wherever it's made (it can't be re-run from Apps Script).
+
 ## Good to know
 
 - In the Apps Script editor the files show with their folder, e.g. `app/matrix/matrix-css`. That is normal.

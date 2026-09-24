@@ -49,9 +49,100 @@ function getStamp() {
   return { id: f.getId(), updated: f.getLastUpdated().getTime() };
 }
 
-/** Everything the web app needs, read fresh from the Drive file on every call. */
+/* ---------- data for the page (cached, refreshed every hour) ---------- */
+
+/**
+ * Everything the web app needs. Served from the cache when the Drive file hasn't changed since it was read;
+ * otherwise the file is read again (so a new upload shows up right away).
+ */
 function getData() {
   const file = sourceFile_();
+  const stamp = file.getId() + ':' + file.getLastUpdated().getTime();
+  const cached = readCache_();
+  if (cached && cached.stamp === stamp) return cached.data;
+  const data = buildData_(file);
+  writeCache_(stamp, data);
+  return data;
+}
+
+/** Run by the hourly trigger: reads the Drive file again and stores the result, so the page opens fast. */
+function refreshData() {
+  const file = sourceFile_();
+  writeCache_(file.getId() + ':' + file.getLastUpdated().getTime(), buildData_(file));
+}
+
+/**
+ * Run this ONCE from the Apps Script editor (select "setupHourlyRefresh" → Run) to start the hourly refresh.
+ * Running it again replaces the old trigger (never creates two).
+ */
+function setupHourlyRefresh() {
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === 'refreshData') ScriptApp.deleteTrigger(t);
+  });
+  ScriptApp.newTrigger('refreshData').timeBased().everyHours(1).create();
+  refreshData();
+}
+
+/* The cache holds max 100 KB per entry, so the data is zipped and cut into pieces. Kept 6 hours (the maximum). */
+const CACHE_KEY = 'pp_data';
+const CACHE_PIECE = 90000;
+
+function writeCache_(stamp, data) {
+  try {
+    const zipped = Utilities.base64Encode(Utilities.gzip(Utilities.newBlob(JSON.stringify(data))).getBytes());
+    const pieces = {};
+    let n = 0;
+    for (let i = 0; i < zipped.length; i += CACHE_PIECE)
+      pieces[CACHE_KEY + '_' + n++] = zipped.slice(i, i + CACHE_PIECE);
+    pieces[CACHE_KEY] = JSON.stringify({ stamp: stamp, n: n });
+    CacheService.getScriptCache().putAll(pieces, 21600);
+  } catch (e) {
+    console.warn('Could not cache the data: ' + e); // the page still works, it just reads the file each time
+  }
+}
+
+function readCache_() {
+  try {
+    const cache = CacheService.getScriptCache();
+    const meta = JSON.parse(cache.get(CACHE_KEY) || 'null');
+    if (!meta) return null;
+    const keys = [];
+    for (let i = 0; i < meta.n; i++) keys.push(CACHE_KEY + '_' + i);
+    const got = cache.getAll(keys);
+    if (
+      keys.some(function (k) {
+        return !got[k];
+      })
+    )
+      return null;
+    const blob = Utilities.newBlob(
+      Utilities.base64Decode(
+        keys
+          .map(function (k) {
+            return got[k];
+          })
+          .join('')
+      ),
+      'application/x-gzip'
+    );
+    return { stamp: meta.stamp, data: JSON.parse(Utilities.ungzip(blob).getDataAsString()) };
+  } catch (e) {
+    return null;
+  }
+}
+
+/** A sheet with contact persons (Query 5): named "Query5", or has a contact person / contact name column. */
+function isContactsSheet_(name, hk) {
+  return (
+    /query\s*5$/i.test(String(name).trim()) ||
+    hk.some(function (h) {
+      return /^contact(person|persons|name|fullname)?$/.test(h);
+    })
+  );
+}
+
+/** Reads the Drive file and links all sheets on accountid. */
+function buildData_(file) {
   const sheets = readXlsx_(file.getId()).filter(function (s) {
     return s.rows.length > 0 && s.rows[0].length;
   });
@@ -120,8 +211,9 @@ function getData() {
       link.push(a);
     }
     // one row per account → merged into the account; several → attached as a list
-    const role =
-      hk.indexOf('opportunityid') >= 0
+    const role = isContactsSheet_(s.name, hk)
+      ? 'contacts'
+      : hk.indexOf('opportunityid') >= 0
         ? 'projects'
         : hk.some(function (h) {
               return /platform/.test(h);

@@ -132,7 +132,7 @@ function rowsTable(entries, a) {
 function locate(a) {
   var v = viewOf(a);
   var def = MAPS[v],
-    p = def.place(a),
+    p = placesOf(def, a)[0],
     key = String(p[0]) + '§' + String(p[1]);
   var rw = def.rows.filter(function (x) {
       return String(x.k) === String(p[0]);
@@ -194,6 +194,12 @@ function openDetail(i) {
   var pr = a.projects.slice().sort(function (x, y) {
     return String(cellBy(y.s, y.j, 'Phase_Group')).localeCompare(String(cellBy(x.s, x.j, 'Phase_Group')));
   });
+  // contact persons (Query 5 in the Excel file) - only shown here, not in the big table
+  h +=
+    '<h3>Contact persons (' +
+    a.contacts.length +
+    ')</h3>' +
+    (a.contacts.length ? groupTables(a.contacts, a) : '<p class="meta">None yet.</p>');
   h += '<h3>Projects (' + pr.length + ')</h3>' + groupTables(pr, a);
   h += '<h3>Social media (' + a.social.length + ')</h3>' + groupTables(a.social, a);
   if (a.lists.length) h += '<h3>Other linked rows (' + a.lists.length + ')</h3>' + groupTables(a.lists, a);

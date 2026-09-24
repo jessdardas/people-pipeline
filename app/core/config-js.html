@@ -59,6 +59,17 @@ var CNT_LABELS = ['0', '1', '2–3', '4–5', '6–10', '11–20', '21+'];
 
 var PRJ_LABELS = ['None', '1', '2–5', '6–10', '11+'];
 
+// --- map 01: accounts with several projects -----------------------------------------
+// The toggle above map 01: which project decides the column (phase) of an account.
+var PROJECT_MODES = [
+  { k: 'newest', t: 'Newest project' },
+  { k: 'advanced', t: 'Most advanced phase' },
+  { k: 'all', t: 'All projects' } // every project is counted in its own phase column
+];
+// "Newest project" = the project with the latest date in the first of these columns found in the projects sheet.
+// If the projects sheet has none of them, the phase from the accounts sheet (Phase_Group) is used.
+var PROJECT_DATE_COLS = ['createdon', 'createddate', 'created', 'opportunitycreatedon', 'estimatedclosedate', 'actualclosedate'];
+
 // --- app state (what is selected right now) - changed by the app, not by hand ---
 // units/pipes = selected service units / pipelines (pipes: [1] = Pipeline 1 on start),
 // view = which map tab (1-4), F / SF = filters, g = the account table (sort, column filters, search).
@@ -71,6 +82,7 @@ var S = {
   units: [],
   pipes: [1],
   view: 1,
+  projMode: 'newest', // map 01 toggle, see PROJECT_MODES
   F: {},
   social: 'all',
   SF: {},

@@ -4,33 +4,34 @@
    Change a colour here and it changes on the whole page.
    ========================================================================== */
 :root {
-  /* page */
-  --bg: #f6f5fb; /* page background (behind the cards) */
+  /* page - everything is grey and black, only the matrix has colour */
+  --bg: #f4f4f4; /* page background (behind the cards) */
   --surface: #ffffff; /* cards, header, panels */
-  --soft: #f1effa; /* hover backgrounds, table headers */
-  --line: #e6e3f0; /* borders and dividers */
+  --soft: #efefef; /* hover backgrounds, table headers */
+  --line: #e0e0e0; /* borders and dividers */
 
   /* text */
-  --text: #1e1b2e; /* main text */
-  --text-soft: #5b5872; /* secondary text */
-  --text-faint: #8f8ca5; /* labels, hints, counters */
+  --text: #111111; /* main text */
+  --text-soft: #555555; /* secondary text */
+  --text-faint: #8a8a8a; /* labels, hints, counters */
 
-  /* brand */
-  --accent: #5b4fe0; /* buttons, active tabs, selected items */
-  --accent-soft: #ecebfd; /* light accent backgrounds */
-  --pop: #ff7a59; /* small highlights: filter badges, selected matrix cell */
+  /* active things: selected service unit, active tab, buttons, filter counts */
+  --accent: #111111;
+  --accent-soft: #ededed;
 
-  /* matrix heat colour: a cell gets this colour, lighter or darker by its number of accounts */
-  --heat-rgb: 91, 79, 224; /* same as --accent, written as r, g, b */
-  --heat-text-dark: #ffffff; /* number on a dark cell */
-  --heat-text-light: #1e1b2e; /* number on a light cell */
+  /* matrix: cells go from --heat-low (few accounts) to --heat-high (the most) */
+  --heat-low: #eaf2fb; /* pastel blue, very light */
+  --heat-high: #7ea7da; /* pastel blue, strongest */
+  --heat-text: #16253b; /* the numbers in the cells */
+  --heat-selected: #2d4f7c; /* border of the cell whose accounts are shown */
   --found: #ffd23f; /* the yellow glow after "show on map" / search */
 
   /* shapes */
-  --radius: 10px;
-  --radius-lg: 16px;
-  --shadow: 0 1px 2px rgba(30, 27, 46, 0.05), 0 6px 20px rgba(30, 27, 46, 0.06);
-  --shadow-lg: 0 20px 60px rgba(30, 27, 46, 0.18);
+  --radius: 6px; /* buttons, menus */
+  --radius-lg: 8px; /* cards */
+  --cell-radius: 3px; /* matrix cells (0 = square) */
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 4px 14px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.16);
   --font: 'Plus Jakarta Sans', Inter, 'Helvetica Neue', Arial, sans-serif;
 }
 
@@ -138,7 +139,7 @@ main {
   height: 16px;
   margin-right: 10px;
   vertical-align: -3px;
-  border: 2.5px solid var(--accent-soft);
+  border: 2.5px solid var(--line);
   border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;

@@ -29,7 +29,7 @@ var MAPS = {
     filter: function (a) {
       return a.cls === 'current pipeline';
     },
-    x: 'Project phase (latest)',
+    x: 'Project phase (newest project)', // changed by setProjMode()
     y: 'Last meeting',
     cols: PHASES.map(function (p) {
       return { k: p, t: p };
@@ -42,7 +42,16 @@ var MAPS = {
       { k: 'n', t: 'No meeting', s: 'never met', opt: 1 }
     ],
     place: function (a) {
-      return [band(mo(a.lastMeeting), [6, 12, 24], 'n'), PHASES.indexOf(a.phase) >= 0 ? a.phase : 'none'];
+      var ph = S.projMode === 'advanced' ? a.maxPhase || a.phase : a.newestPhase || a.phase;
+      return [band(mo(a.lastMeeting), [6, 12, 24], 'n'), PHASES.indexOf(ph) >= 0 ? ph : 'none'];
+    },
+    // "All projects": one place per project (an account without projects is placed once, by its phase)
+    places: function (a) {
+      if (S.projMode !== 'all' || !a.projInfo.length) return [this.place(a)];
+      var row = band(mo(a.lastMeeting), [6, 12, 24], 'n');
+      return a.projInfo.map(function (p) {
+        return [row, PHASES.indexOf(p.ph) >= 0 ? p.ph : 'none'];
+      });
     }
   },
   2: {
@@ -123,6 +132,21 @@ var MAPS = {
     }
   }
 };
+
+/** Where an account goes on a map: a list of [row, column] (more than one on map 01 with "All projects"). */
+function placesOf(def, a) {
+  return def.places ? def.places(a) : [def.place(a)];
+}
+
+/** Map 01 toggle: newest project / most advanced phase / all projects. */
+function setProjMode(m) {
+  S.projMode = m;
+  MAPS[1].x = 'Project phase (' + { newest: 'newest project', advanced: 'most advanced', all: 'every project' }[m] + ')';
+  S.cell = null;
+  S.hl = null;
+  S.g = newGrid();
+  render();
+}
 
 function viewOf(a) {
   for (var v = 1; v <= 3; v++) if (MAPS[v].filter(a)) return v;

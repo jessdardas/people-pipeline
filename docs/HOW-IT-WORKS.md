@@ -21,7 +21,9 @@ people pipeline.xlsx  ──►  server/Code.js + XlsxReader.js ── getData()
      - otherwise (one row per account) → **merge**: its columns become extra account fields.
    - Empty rows and exact duplicate rows are skipped.
 5. **`packSheet_()`** makes the data smaller before sending it: it stores it column by column, and text that repeats a lot (like "London") is stored once in a dictionary with numbers pointing to it.
-6. **`getStamp()`** is a cheap check the page calls every 10 minutes to see if the Drive file changed.
+6. **Cache + hourly refresh:** `getData()` returns the stored result while the file hasn't changed (`readCache_()` / `writeCache_()`, CacheService, zipped, 6 hours). `refreshData()` re-reads the file; `setupHourlyRefresh()` (run once) makes a trigger that runs it every hour.
+7. **Contact persons:** a sheet named "Query5", or one with a contact person column, is linked as `contacts` (`isContactsSheet_()`); it's only shown in the account details panel.
+8. **`getStamp()`** is a cheap check the page calls every 10 minutes to see if the Drive file changed.
 
 ## 2. The page (`app/`)
 
@@ -42,6 +44,8 @@ people pipeline.xlsx  ──►  server/Code.js + XlsxReader.js ── getData()
 | 02 Past clients | classification "past client" | last meeting in 3-month steps | last project (0–6, 6–12, 12–18, 18+ months) |
 | 03 No business | past demand, met in/out, contacted, not contacted | account category | classification |
 | All accounts | everyone | account category | classification |
+
+**Map 01 toggle** (`app/matrix/maps-js.html`, `setProjMode()`): when an account has several projects, its column is the phase of its **newest project** (latest date in one of `PROJECT_DATE_COLS`), its **most advanced phase**, or with **All projects** every project is counted in its own phase column (the numbers are then projects, and an account without projects counts once).
 
 **Drawing** (`app/matrix/matrix-js.html`, `render()`): counts the accounts per cell and colours each cell darker the more accounts it holds. Clicking a number opens the **account table** (`app/table/table-js.html`) for that cell, which you can sort, filter per column, search and export.
 

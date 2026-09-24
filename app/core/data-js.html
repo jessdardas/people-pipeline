@@ -125,6 +125,7 @@ function build(d) {
     a.validDays = a.validDate == null ? null : Math.max(0, Math.round(todaySerial() - a.validDate));
     a.social = [];
     a.projects = [];
+    a.contacts = [];
     a.lists = [];
     Object.keys(a.L).forEach(function (si) {
       var s = S.sheets[si];
@@ -132,9 +133,22 @@ function build(d) {
         if (s.role === 'social') {
           if (rowHasContent(s, j)) a.social.push({ s: +si, j: j });
         } else if (s.role === 'projects') a.projects.push({ s: +si, j: j });
+        else if (s.role === 'contacts') a.contacts.push({ s: +si, j: j });
         else a.lists.push({ s: +si, j: j });
       });
     });
+    // phase + date of each project, for the map 01 toggle (newest / most advanced / all)
+    a.projInfo = a.projects.map(function (p) {
+      return { ph: phaseKey(cellBy(p.s, p.j, 'Phase_Group')), d: projDate(p) };
+    });
+    var newest = null,
+      best = -1;
+    a.projInfo.forEach(function (p) {
+      if (p.d != null && (!newest || p.d > newest.d)) newest = p;
+      best = Math.max(best, PHASES.indexOf(p.ph));
+    });
+    a.newestPhase = newest ? newest.ph : '';
+    a.maxPhase = best >= 0 ? PHASES[best] : '';
     a.projPhases = uniq(
       a.projects
         .map(function (p) {
@@ -185,6 +199,16 @@ function build(d) {
       .sort()
   );
   buildSocialFilters();
+}
+
+/** The date of a project used for "Newest project" (first column of PROJECT_DATE_COLS in its sheet). */
+function projDate(p) {
+  var s = S.sheets[p.s];
+  if (s._dc === undefined) {
+    s._dc = -1;
+    for (var i = 0; i < PROJECT_DATE_COLS.length && s._dc < 0; i++) s._dc = s.hk.indexOf(PROJECT_DATE_COLS[i]);
+  }
+  return s._dc < 0 ? null : num(cv(p.s, s._dc, p.j));
 }
 
 function uniq(a) {

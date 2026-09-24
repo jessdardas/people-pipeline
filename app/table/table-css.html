@@ -60,21 +60,20 @@
   color: var(--text);
 }
 
-/* the table itself */
+/* the table itself: square corners, rows spaced apart */
 .tw {
   overflow: auto;
-  border: 1px solid var(--line);
-  border-radius: 12px;
 }
 table.tb {
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0 4px; /* the space between rows */
   width: 100%;
   font-size: 12.5px;
 }
 .tb th {
   text-align: left;
   font-size: 11.5px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-soft);
   background: var(--soft);
   padding: 9px 12px;
@@ -85,27 +84,35 @@ table.tb {
 }
 .tb th:hover,
 .tb th.s {
-  color: var(--accent); /* sorted or filtered column */
+  color: var(--text); /* sorted or filtered column */
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 .tb td {
   padding: 8px 12px;
-  border-top: 1px solid var(--soft);
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
   white-space: nowrap;
   max-width: 260px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.tb td:first-child {
+  border-left: 1px solid var(--line);
+}
+.tb td:last-child {
+  border-right: 1px solid var(--line);
+}
 .tb td b {
-  font-weight: 600;
+  font-weight: 700;
 }
 .tb tbody tr {
   cursor: pointer;
 }
-.tb tbody tr:nth-child(even) td {
-  background: #fcfbff;
-}
 .tb tbody tr:hover td {
-  background: var(--accent-soft);
+  background: #f7f7f7;
+  border-color: #bdbdbd;
 }
 .tb td.num {
   text-align: right;
@@ -132,7 +139,7 @@ table.tb {
   font-style: normal;
   font-size: 8px;
   vertical-align: middle;
-  color: var(--pop);
+  color: var(--text);
 }
 .nomatch {
   padding: 12px 4px;

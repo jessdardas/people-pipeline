@@ -19,7 +19,7 @@ All paths are inside [`app/`](../app). The screenshots use made-up data.
 
 | # | What you see | HTML | JS | CSS |
 |---|---|---|---|---|
-| 1 | Logo "PSLAB · People Pipeline" | `header/header.html` (`.logo`) | none | `header/header-css.html` → `.logo`, `.logo-mark` (the coloured square), `.logo-name`, `.logo-app` |
+| 1 | Title "People Pipeline" | `header/header.html` (`.logo`) | none | `header/header-css.html` → `.logo` |
 | 2 | "Last refreshed …" + ↻ refresh button | `header/header.html` (`#rf`) | `header/header-js.html` → `renderRefresh()`; the button calls `refresh()` in `core/main-js.html` | `header/header-css.html` → `.rf` |
 | 3 | Search box | `header/header.html` (`.gs`) | `search/search-js.html` → `gSearch()`, `gKey()` | `search/search-css.html` → `.gs`, `.gs-icon` |
 | 4 | Service unit buttons (All, London, Beirut …) | `header/header.html` (`#units`) | `header/header-js.html` → `renderUnits()`, `setUnit()`. The order is `UNIT_ORDER` in `core/config-js.html` | `header/header-css.html` → `.units button`, `.on` (selected), `.nodata` (faded: no accounts) |
@@ -33,12 +33,13 @@ All paths are inside [`app/`](../app). The screenshots use made-up data.
 | 12 | Axis name on the side ("LAST MEETING ↓", also the vertical one) | `<main>` | `render()`; text is `MAPS[…].y` | `matrix/matrix-css.html` → `.grid th.xl`, `.grid th.yl` |
 | 13 | Column titles (P0 … / 0–6 months …) | `<main>` | `render()`; the list is `MAPS[…].cols` in `matrix/maps-js.html` | `matrix/matrix-css.html` → `.grid th.col` |
 | 14 | Row titles + small text under them | `<main>` | `render()`; the list is `MAPS[…].rows` (`t` = title, `s` = small text) | `matrix/matrix-css.html` → `.grid th.row` (its `padding` = the space to the cells), `.grid th.row small` |
-| 15 | A cell with a number (click it to see its accounts) | `<main>` | `render()` (colour strength = number ÷ biggest number); a click calls `openCell()` in `table/table-js.html`. Which cell an account goes in: `MAPS[…].place()` | `matrix/matrix-css.html` → `.grid td.c`, `.sel` (selected, coral border), `.hl` (yellow glow after search). Colour: `--heat-rgb` in `core/base-css.html` |
+| 15 | A cell with a number (click it to see its accounts) | `<main>` | `render()` (colour strength = number ÷ biggest number); a click calls `openCell()` in `table/table-js.html`. Which cell an account goes in: `MAPS[…].place()` | `matrix/matrix-css.html` → `.grid td.c`, `.sel` (selected, coral border), `.hl` (yellow glow after search). Colours: `--heat-low` → `--heat-high` in `core/base-css.html`, mixed by `heatColor()` in `matrix/matrix-js.html` |
 | 16 | An empty cell (–) | `<main>` | `render()` | `matrix/matrix-css.html` → `.grid td.zero` |
-| 17 | Row totals (right) | `<main>` | `render()` | `matrix/matrix-css.html` → `.grid td.tot`, `.grid th.tot` |
+| 17 | Row totals (right, bold, right next to the cells) | `<main>` | `render()` | `matrix/matrix-css.html` → `.grid td.tot`, `.grid th.tot` |
 | 18 | Column totals row | `<main>` | `render()` | `matrix/matrix-css.html` → `.grid tr.sum` |
 | 19 | Total accounts on this map | `<main>` | `render()` | `matrix/matrix-css.html` → `.grid td.grand` |
 | 20 | "Click a number…" hint | `<main>` | `render()` | `core/base-css.html` → `.hint` |
+| 21 | Map 01 toggle: Newest project / Most advanced phase / All projects | `<main>` | `matrix/matrix-js.html` → `projModeHtml()`; a click calls `setProjMode()` in `matrix/maps-js.html`. The options are `PROJECT_MODES`, and the date that decides "newest" is `PROJECT_DATE_COLS`, both in `core/config-js.html`. How each account is placed: `MAPS[1].place()` / `places()` | `matrix/matrix-css.html` → `.pmode`, `.seg`, `.seg button.on` |
 
 Also in `<main>`:
 - **"Reading the source file…" while loading:** `app/index.html` (`.loading`, `.spinner`). Styled in `core/base-css.html`.
@@ -65,6 +66,7 @@ Also in `<main>`:
 
 Also:
 - **"Show more (… left)"** button: `renderList()`, styled by `.more`.
+- **Social media column:** only the platforms (e.g. "Instagram + LinkedIn"), made by `socialPlatforms()` in `table/table-js.html`. All the details are in the account panel.
 - **Dates such as "19 Dec 2025 (279 days ago)":** made by `dateAgo()` in `core/helpers-js.html`, used in `TCOLS` (Last meeting, Last validated).
 
 ---
@@ -82,14 +84,15 @@ Also:
 | 5 | "Show on map" | `#aBody` | `search/search-js.html` → `goTo()` | `details/details-css.html` → `.loc button` |
 | 6 | Section titles (Overview, Projects, Social media …) | `#aBody` | `openDetail()` | `details/details-css.html` → `.det h3` (the small bar is `.det h3::before`) |
 | 7 | Overview list (label / value) | `#aBody` | `openDetail()`: the `kv` list (add or remove a line there). Dates use `dateAgo()` | `details/details-css.html` → `.kv` |
-| 8 | Projects / Social media / Other linked rows | `#aBody` | `details/details-js.html` → `groupTables()`, `rowsTable()` | `table/table-css.html` (`.tb`) + `details/details-css.html` (`.det table.tb`) |
+| 8 | Contact persons (from Query 5 in the Excel file; "None yet." until it's added), then Projects, Social media (every platform with all its columns), Other linked rows | `#aBody` | `details/details-js.html` → `openDetail()`, `groupTables()`, `rowsTable()`. The Query 5 sheet is recognised by `isContactsSheet_()` in `server/Code.js` | `table/table-css.html` (`.tb`) + `details/details-css.html` (`.det table.tb`) |
 
 ![Details tables](images/3b-details-tables.png)
 
 | # | What you see | JS | CSS |
 |---|---|---|---|
 | 1 | **#** counter column in the panel's tables | `details/details-js.html` → `rowsTable()` | `table/table-css.html` → `.tb .cnt` |
-| 2, 3 | Projects / Social media tables. Dates get "(N days ago)" | `rowsTable()`, `fmtVal()`, `cellHtml()` (links, service units) | `table/table-css.html` → `.tb` |
+| 2 | Projects table. Dates get "(N days ago)" | `rowsTable()`, `fmtVal()` | `table/table-css.html` → `.tb` |
+| 3 | Social media: every platform and its information (followers, link …) | `rowsTable()`, `cellHtml()` (links) | `table/table-css.html` → `.tb` |
 
 - **"More details" (bottom of the panel):** every other column in the Excel file, shown automatically. Columns that shouldn't appear there are listed in `DET_HIDE` in `details/details-js.html`. Nicer column names are set in `pretty()` in `core/helpers-js.html`.
 - **The grey layer behind the panel:** `details/details.html` (`#dim`), styled by `.dim`.
@@ -139,9 +142,11 @@ Also:
 
 | I want to… | Go to |
 |---|---|
-| Change the matrix colour | `--heat-rgb` in `core/base-css.html` (write it as `r, g, b`) |
-| Change the accent colour (buttons, active tab) | `--accent` and `--accent-soft` in `core/base-css.html` |
+| Change the matrix colours | `--heat-low` (lightest) and `--heat-high` (strongest) in `core/base-css.html` |
+| Change the black of buttons / selected items | `--accent` and `--accent-soft` in `core/base-css.html` |
 | Change the font | the Google Fonts `<link>` in `app/index.html` + `--font` in `core/base-css.html` |
+| Round or square matrix cells | `--cell-radius` in `core/base-css.html` (0 = square) |
+| Space between the rows of the tables | `border-spacing` on `table.tb` in `table/table-css.html` |
 | Make the matrix cells taller or shorter | `.grid td.c` and `.grid td.c button` (`height`, `min-height`) in `matrix/matrix-css.html` |
 | Change the space between cells | `border-spacing` on `table.grid` in `matrix/matrix-css.html` |
 | Change the text of a toast message | search for `toast(` in the `*-js.html` files |

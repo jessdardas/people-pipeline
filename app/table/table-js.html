@@ -62,16 +62,6 @@ var TCOLS = [
     }
   },
   {
-    k: 'pipe',
-    t: 'Pipeline',
-    g: function (a) {
-      return a.pipe ? String(a.pipe) : '';
-    },
-    s: function (a) {
-      return a.pipe || 9;
-    }
-  },
-  {
     k: 'postn',
     t: 'Post-P1 #',
     g: function (a) {
@@ -137,15 +127,12 @@ var TCOLS = [
   },
   {
     k: 'soc',
-    t: 'Social',
+    t: 'Social media',
     g: function (a) {
-      return socialSummary(a);
+      return socialPlatforms(a);
     },
     s: function (a) {
       return a.social.length ? 0 : 1;
-    },
-    fv: function (a) {
-      return a.social.length ? 'Has social media' : 'None';
     }
   }
 ];
@@ -172,6 +159,18 @@ function projSummary(a) {
     return (n || '') + (ph ? (n ? ' (' + ph + ')' : ph) : '');
   });
   return a.projects.length + ' · ' + names.join(', ');
+}
+
+/** "Instagram + LinkedIn": the platforms of an account (all details are in the account panel) */
+function socialPlatforms(a) {
+  return uniq(
+    a.social
+      .map(function (e) {
+        return cellBy(e.s, e.j, 'pslab_platformname') || cellBy(e.s, e.j, 'platform');
+      })
+      .filter(Boolean)
+      .map(String)
+  ).join(' + ');
 }
 
 function socialSummary(a) {

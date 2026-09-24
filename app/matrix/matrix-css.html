@@ -2,13 +2,10 @@
 /* ==========================================================================
    MATRIX: title of the map + the coloured grid of numbers
    Filled by matrix/matrix-js.html (render). Rows/columns of each map: matrix/maps-js.html
-   The heat colour of the cells is --heat-rgb in core/base-css.html
+   The colours of the cells are --heat-low / --heat-high in core/base-css.html
    ========================================================================== */
 
 /* map title ("Current pipeline") + selection text under it */
-.head {
-  margin-bottom: 16px;
-}
 h1 {
   font-size: 22px;
   font-weight: 800;
@@ -37,6 +34,7 @@ table.grid {
 
 /* column titles (P0, P1 … / 0–6 months …) */
 .grid th.col {
+  width: 20%; /* the data columns share all the spare width (the other columns are 1%) */
   font-size: 11.5px;
   font-weight: 600;
   color: var(--text-soft);
@@ -56,7 +54,8 @@ table.grid {
   white-space: nowrap;
 }
 .grid th.yl {
-  width: 22px;
+  width: 1%; /* as narrow as possible - the cells get the rest of the width */
+  min-width: 22px;
   vertical-align: middle;
 }
 .grid th.yl div {
@@ -92,8 +91,9 @@ table.grid {
   height: 56px;
   min-width: 64px;
   text-align: center;
-  border-radius: var(--radius);
+  border-radius: var(--cell-radius);
   position: relative;
+  color: var(--heat-text);
   transition:
     transform 0.12s,
     box-shadow 0.12s;
@@ -105,15 +105,15 @@ table.grid {
   font-size: 16px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  border-radius: var(--radius);
+  border-radius: var(--cell-radius);
 }
 .grid td.c:not(.zero):hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 18px rgba(var(--heat-rgb), 0.25);
+  box-shadow: 0 6px 14px rgba(45, 79, 124, 0.25);
 }
 /* the cell whose accounts are shown below */
 .grid td.c.sel {
-  box-shadow: inset 0 0 0 3px var(--pop);
+  box-shadow: inset 0 0 0 3px var(--heat-selected);
 }
 /* a cell with no accounts */
 .grid td.zero {
@@ -123,37 +123,90 @@ table.grid {
   font-size: 12px;
 }
 
-/* totals: last column and last row */
+/* totals: last column and last row - plain bold numbers right next to the grid (no boxes) */
 .grid td.tot,
 .grid th.tot {
-  font-size: 12px;
-  color: var(--text-soft);
-  text-align: center;
-  padding: 0 10px;
+  width: 1%;
   white-space: nowrap;
-  font-weight: 500;
-  width: 70px;
+  padding: 0 4px 0 10px;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text);
   font-variant-numeric: tabular-nums;
 }
 .grid th.tot {
   font-size: 11.5px;
-  font-weight: 600;
+  font-weight: 700;
+  color: var(--text-soft);
 }
 .grid tr.sum th,
 .grid tr.sum td {
-  height: 38px;
-  border-top: 1.5px solid var(--line);
+  height: 34px;
+  vertical-align: top;
+  padding-top: 6px;
+}
+.grid tr.sum td.tot {
+  text-align: center;
+  padding: 6px 0 0;
 }
 .grid tr.sum th {
   text-align: left;
-  font-weight: 600;
-  font-size: 12.5px;
-  padding: 0 10px 0 4px;
+  font-weight: 800;
+  font-size: 13px;
+  padding: 6px 10px 0 4px;
+}
+.grid tr.sum td.grand {
+  text-align: left;
+  padding-left: 10px;
 }
 .grid td.grand b {
-  color: var(--accent);
+  font-size: 16px;
   font-weight: 800;
-  font-size: 14px;
+}
+
+/* map 01 toggle: newest project / most advanced phase / all projects */
+.head {
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px 24px;
+  flex-wrap: wrap;
+}
+.pmode {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--text-soft);
+}
+.pmode small {
+  color: var(--text-faint);
+  font-size: 11.5px;
+}
+.seg {
+  display: flex;
+  background: var(--soft);
+  padding: 3px;
+  border-radius: 999px;
+}
+.seg button {
+  padding: 5px 13px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-soft);
+  border-radius: 999px;
+}
+.seg button:hover {
+  color: var(--text);
+}
+.seg button.on {
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
 }
 
 /* the yellow glow on the cell of an account found with search / "Show on map" */

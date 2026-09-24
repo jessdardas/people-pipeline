@@ -34,6 +34,46 @@ function filterText() {
   return parts.join(' · ');
 }
 
+/** Colour of a matrix cell: from --heat-low (few) to --heat-high (the most), set in core/base-css.html */
+function heatColor(t) {
+  if (!heatColor.lo) {
+    var css = getComputedStyle(document.documentElement);
+    var hex = function (name, dflt) {
+      var v = (css.getPropertyValue(name) || dflt).trim().replace('#', '');
+      return [0, 2, 4].map(function (i) {
+        return parseInt(v.substr(i, 2), 16);
+      });
+    };
+    heatColor.lo = hex('--heat-low', '#eaf2fb');
+    heatColor.hi = hex('--heat-high', '#7ea7da');
+  }
+  var c = heatColor.lo.map(function (lo, i) {
+    return Math.round(lo + (heatColor.hi[i] - lo) * Math.sqrt(t)); // sqrt: small numbers still get some colour
+  });
+  return 'rgb(' + c.join(',') + ')';
+}
+
+/** The toggle above map 01 (see PROJECT_MODES in core/config-js.html) */
+function projModeHtml() {
+  return (
+    '<div class="pmode"><span>Accounts with several projects</span><div class="seg">' +
+    PROJECT_MODES.map(function (m) {
+      return (
+        '<button class="' +
+        (S.projMode === m.k ? 'on' : '') +
+        '" onclick="setProjMode(\'' +
+        m.k +
+        '\')">' +
+        esc(m.t) +
+        '</button>'
+      );
+    }).join('') +
+    '</div>' +
+    (S.projMode === 'all' ? '<small>numbers = projects</small>' : '') +
+    '</div>'
+  );
+}
+
 function render() {
   var main = document.getElementById('main');
   if (!S.acc.length) return;
@@ -42,13 +82,16 @@ function render() {
     return def.filter(a) && pass(a);
   });
   var ft = filterText();
+  var projects = S.view === 1 && S.projMode === 'all'; // numbers count projects instead of accounts
   var h =
     '<div class="head"><div><h1>' +
     esc(def.title) +
     '</h1><div class="meta">' +
     esc(scopeText()) +
     (ft ? ' · ' + esc(ft) : '') +
-    '</div></div></div>';
+    '</div></div>' +
+    (S.view === 1 ? projModeHtml() : '') +
+    '</div>';
   if (!data.length) {
     main.innerHTML =
       h +
@@ -59,12 +102,15 @@ function render() {
   var cells = {},
     rowT = {},
     colT = {};
+  var total = 0;
   data.forEach(function (a) {
-    var p = def.place(a),
-      k = p[0] + '§' + p[1];
-    (cells[k] = cells[k] || []).push(a);
-    rowT[p[0]] = (rowT[p[0]] || 0) + 1;
-    colT[p[1]] = (colT[p[1]] || 0) + 1;
+    placesOf(def, a).forEach(function (p) {
+      var k = p[0] + '§' + p[1];
+      (cells[k] = cells[k] || []).push(a);
+      rowT[p[0]] = (rowT[p[0]] || 0) + 1;
+      colT[p[1]] = (colT[p[1]] || 0) + 1;
+      total++;
+    });
   });
   var rows = def.rows.filter(function (x) {
     return !x.opt || rowT[x.k];
@@ -110,8 +156,6 @@ function render() {
         h += '<td class="c zero' + (hl ? ' hl' : '') + '" data-key="' + esc(key) + '">–</td>';
         return;
       }
-      var al = max ? 0.06 + 0.84 * (n / max) : 0,
-        dark = al > 0.5;
       var sel = S.cell && S.cell.key === key;
       h +=
         '<td class="c' +
@@ -119,10 +163,8 @@ function render() {
         (hl ? ' hl' : '') +
         '" data-key="' +
         esc(key) +
-        '" style="background:rgba(var(--heat-rgb),' +
-        al.toFixed(3) +
-        ');color:' +
-        (dark ? 'var(--heat-text-dark)' : 'var(--heat-text-light)') +
+        '" style="background:' +
+        heatColor(max ? n / max : 0) +
         '"><button onclick="openCell(\'' +
         esc(String(rw.k)) +
         "','" +
@@ -130,7 +172,7 @@ function render() {
         '\')" title="' +
         esc(
           n.toLocaleString('en-GB') +
-            (n === 1 ? ' account' : ' accounts') +
+            (projects ? (n === 1 ? ' project' : ' projects') : n === 1 ? ' account' : ' accounts') +
             ' · ' +
             rw.t +
             ' × ' +
@@ -151,8 +193,10 @@ function render() {
       })
       .join('') +
     '<td class="tot grand"><b>' +
-    data.length.toLocaleString('en-GB') +
-    '</b> acc.</td></tr>';
+    total.toLocaleString('en-GB') +
+    '</b> ' +
+    (projects ? 'projects' : 'acc.') +
+    '</td></tr>';
   h += '</tbody></table></div>';
   if (S.cell && !cells[S.cell.key]) S.cell = null;
   if (S.cell) {
@@ -163,7 +207,9 @@ function render() {
       cl0 = cols.filter(function (x) {
         return String(x.k) === pk[1];
       })[0];
-    S.list = cells[S.cell.key].slice();
+    S.list = cells[S.cell.key].filter(function (a, i, all) {
+      return all.indexOf(a) === i; // an account with 2 projects in the same cell is listed once
+    });
     S.listMeta =
       def.title + ' › ' + def.y + ': ' + (rw0 ? rw0.t : pk[0]) + ' × ' + def.x + ': ' + (cl0 ? cl0.t : pk[1]);
     h += listBlock(S.listMeta, true);
