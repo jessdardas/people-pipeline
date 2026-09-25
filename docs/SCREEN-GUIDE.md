@@ -13,6 +13,19 @@ All paths are inside [`app/`](../app). The screenshots use made-up data.
 
 ---
 
+## New controls (not numbered on the screenshots yet)
+
+| What you see | JS | CSS |
+|---|---|---|
+| **People pipeline / New DB** toggle next to the title (New DB = validated on or after the admin date) | `header/header-js.html` → `renderDb()`, `setDb()`; the rule is `inDb()` in `filters/filters-js.html` | `header/header-css.html` → `.db`; `.seg` in `matrix/matrix-css.html` |
+| **Owner** row under the service units (pick one or more; none = all) | `header/header-js.html` → `renderOwners()`, `setOwner()` | `header/header-css.html` → `.owners` |
+| **select several boxes** (above the matrix), and clicking a row / column title to select it all | `table/table-js.html` → `openCell()`, `selectLine()`; the list in `matrix/matrix-js.html` → `render()` | `matrix/matrix-css.html` → `.hright`, `.grid th.row`, `.grid th.col` |
+| **Columns** button in the account table: show / hide, rename, reorder; drag a title's edge to resize | `table/table-js.html` → `renderColPanel()`, `colShow()`, `colRename()`, `colMove()`, `startResize()` (saved in the browser) | `table/table-css.html` → `.cpop`, `.colrow`, `.rsz` |
+| Hidden **admin dot** (bottom right) | `admin/admin-js.html` → `openAdmin()`, `adminSave()`, `renderAdmin()` | `admin/admin-css.html` → `.admin-dot`, `.admin` |
+| Pipeline menu | only on map 01 (`renderUnits()`); the other maps always show every pipeline | |
+
+---
+
 ## 1. Top of the page and the matrix
 
 ![Main screen](images/1-main.png)

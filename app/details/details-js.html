@@ -96,6 +96,7 @@ function rowsTable(entries, a) {
     .filter(function (i) {
       return (
         !/id$/.test(s.hk[i]) &&
+        !(s.role === 'projects' && /^(accountname|serviceunitname)$/.test(s.hk[i])) && // already shown above
         ((s.role === 'projects' && i === nameCol(s)) ||
           entries.some(function (e) {
             return cv(e.s, i, e.j) != null;

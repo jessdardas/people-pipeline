@@ -1,23 +1,91 @@
 <script>
 /* Refresh info, service unit buttons, pipeline menu, tabs */
+/** "Last refreshed 14:05" = when the data was last read from the Excel file (↻ = read it again now). */
 function renderRefresh() {
   var s = S.source;
   document.getElementById('rf').innerHTML = s.updated
     ? '<span title="' +
-      esc(
-        (s.name || '') +
-          ' · checked ' +
-          new Date(S.checked).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) +
-          ' · auto-refresh every hour'
-      ) +
+      esc((s.name || '') + ' · file last changed ' + fmtTs(s.updated) + ' · refreshes automatically every hour') +
       '">Last refreshed <b>' +
-      esc(fmtTs(s.updated)) +
+      esc(fmtTs(S.checked)) +
       '</b></span><button onclick="refresh()" title="Refresh now">' +
       (S.busy ? '…' : '↻') +
       '</button>'
     : S.busy
       ? 'Loading…'
       : '';
+}
+
+/** Toggle next to the title: People pipeline (everything) / New DB (validated on or after the admin date). */
+function renderDb() {
+  var d = S.settings.newDbFrom ? fmtXl(newDbSerial()) : '';
+  document.getElementById('db').innerHTML =
+    '<div class="seg"><button class="' +
+    (S.db === 'pipeline' ? 'on' : '') +
+    '" onclick="setDb(\'pipeline\')">People pipeline</button><button class="' +
+    (S.db === 'newdb' ? 'on' : '') +
+    '" onclick="setDb(\'newdb\')" title="Accounts validated on or after ' +
+    esc(d) +
+    '">New DB</button></div>' +
+    (S.db === 'newdb' ? '<small>validated on or after ' + esc(d) + '</small>' : '');
+}
+
+function setDb(db) {
+  S.db = db;
+  changed();
+}
+
+/** Owners of the chosen service unit(s): pick one or more; nothing picked = all owners. */
+function renderOwners() {
+  var box = document.getElementById('owners');
+  if (!S.units.length) {
+    box.innerHTML = '';
+    box.style.display = 'none';
+    return;
+  }
+  var cnt = {};
+  S.acc.forEach(function (a) {
+    if (S.units.indexOf(a.su) >= 0) {
+      var o = a.owner || '(none)';
+      cnt[o] = (cnt[o] || 0) + 1;
+    }
+  });
+  var list = Object.keys(cnt).sort(function (x, y) {
+    return (x === '(none)') - (y === '(none)') || x.localeCompare(y);
+  });
+  S._owners = list;
+  box.style.display = '';
+  box.innerHTML =
+    '<span class="olbl">Owner</span><button class="' +
+    (S.owners.length ? '' : 'on') +
+    '" onclick="setOwner(null)">All</button>' +
+    list
+      .map(function (o) {
+        return (
+          '<button class="' +
+          (S.owners.indexOf(o) >= 0 ? 'on' : '') +
+          '" onclick="setOwner(' +
+          list.indexOf(o) +
+          ')" title="' +
+          cnt[o] +
+          ' accounts">' +
+          esc(o === '(none)' ? 'No owner' : cap(o)) +
+          '</button>'
+        );
+      })
+      .join('');
+}
+
+/** Click an owner to add / remove it (several can be picked). i = position in the owner row, null = All. */
+function setOwner(i) {
+  var o = i === null ? null : S._owners[i];
+  if (o === null) S.owners = [];
+  else {
+    var i = S.owners.indexOf(o);
+    if (i >= 0) S.owners.splice(i, 1);
+    else S.owners.push(o);
+  }
+  changed();
 }
 
 function renderUnits() {
@@ -93,7 +161,8 @@ function renderUnits() {
         );
       }).join('') +
       '<div class="pm-f"><button class="lnk" onclick="setPipe(null)">All pipelines</button><button class="lnk" onclick="S.pm=false;renderUnits()">Close</button></div></div>';
-  document.getElementById('pipes').innerHTML = p;
+  // pipelines only apply to map 01 (the other maps always show every pipeline)
+  document.getElementById('pipes').innerHTML = S.view === 1 ? p : '';
 
   document.getElementById('tabs').innerHTML =
     [1, 2, 3]
@@ -123,6 +192,7 @@ function setUnit(u) {
     if (i >= 0) S.units.splice(i, 1);
     else S.units.push(u);
   } else S.units = S.units.length === 1 && S.units[0] === u ? [] : [u];
+  pruneOwners();
   changed();
 }
 
@@ -140,6 +210,7 @@ function setGroup(gi) {
       if (S.units.indexOf(x) < 0) S.units.push(x);
     });
   else S.units = g.units.slice();
+  pruneOwners();
   changed();
 }
 
@@ -153,6 +224,7 @@ function toggleMulti(on) {
       });
   if (!on && S.units.length > 1 && !isGrp) {
     S.units = [S.units[0]];
+    pruneOwners();
     changed();
   } else renderUnits();
 }
@@ -167,6 +239,16 @@ function setPipe(k) {
   changed();
 }
 
+/** Keep only the picked owners that still exist in the chosen service units. */
+function pruneOwners() {
+  S.owners = S.owners.filter(function (o) {
+    return S.acc.some(function (a) {
+      return (!S.units.length || S.units.indexOf(a.su) >= 0) && (a.owner || '(none)') === o;
+    });
+  });
+  if (!S.units.length) S.owners = [];
+}
+
 function setView(i) {
   S.view = i;
   changed();
@@ -174,7 +256,7 @@ function setView(i) {
 
 function changed() {
   S.hl = null;
-  S.cell = null;
+  S.sel = [];
   S.g = newGrid();
   closePanel();
   closeDrawer();
@@ -183,7 +265,9 @@ function changed() {
 
 function renderAll() {
   renderRefresh();
+  renderDb();
   renderUnits();
+  renderOwners();
   renderFilters();
   render();
 }

@@ -20,7 +20,9 @@ app/
   table/            table-css · table-js                    (account table under the matrix)
   details/          details.html · details-css · details-js (account side panel)
   export/           export-js                               (Excel / PDF)
-server/             Code.js (opens the page, reads Drive, links the sheets) · XlsxReader.js (reads the .xlsx)
+  admin/            admin.html · admin-css · admin-js        (hidden admin dot: New DB date + Data check)
+server/             Code.js (page, Drive file, cache, hourly refresh, settings) · Pipeline.js (how the sheets are read
+                    and linked) · XlsxReader.js (reads the .xlsx)
 appsscript.json     Apps Script settings (time zone, web app access)
 ```
 
@@ -50,6 +52,9 @@ More in [docs/SETUP.md](docs/SETUP.md).
 | Excel / PDF columns | `expRecord()` / `PDF_COLS` in `app/export/export-js.html` |
 | Map 01 toggle options / "newest" date column | `PROJECT_MODES` / `PROJECT_DATE_COLS` in `app/core/config-js.html` |
 | Hourly refresh | `refreshData()` / `setupHourlyRefresh()` in `server/Code.js` (see docs/SETUP.md) |
+| How each Excel sheet is read / combined | `server/Pipeline.js` (see docs/HOW-IT-WORKS.md) |
+| New DB date (for everyone) | the hidden dot at the bottom right of the page (admin password) |
+| Admin password | `ADMIN_HASH` in `server/Code.js` (see docs/SETUP.md) |
 | Which Drive file is read | `SOURCE_FILE_NAME` / `SOURCE_FILE_ID` in `server/Code.js` |
 
 ## Docs

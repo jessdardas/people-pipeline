@@ -73,3 +73,18 @@ Apps Script can only store server files (`.gs` / `.js`) and `.html` files. So th
 ## Dates in the page
 
 Every date is shown with the days since then, e.g. "19 Dec 2025 (279 days ago)": `dateAgo()` / `agoText()` in `app/core/helpers-js.html`. The Excel export keeps plain dates.
+
+## How the Excel sheets are read (`server/Pipeline.js`)
+
+Every sheet is recognised by its **column names**, and linked to the account on `accountid` (case and `{ }` don't matter):
+
+| Sheet (your file) | Recognised by | Read as |
+|---|---|---|
+| accounts detailed | `accountid` + `name` + `classification` | the accounts (one row each; a repeated account is ignored) |
+| projects | `opportunityid` | projects: every row kept |
+| contact person | `contactid` / `contact` | contact persons: every row kept (only in the details panel) |
+| social media | a column with "platform" | platforms: every row kept |
+| account proj details, activity, validation | anything else with `accountid` + account-level columns | **merged into the account**; several rows of one account are combined |
+
+Combining several rows of one account: dates → the latest · counts / amounts → the highest · `Phase_Group` → the most advanced · `pipeline` → the lowest number · "met in" → yes if any row says yes · validation → the whole row with the latest `validation_task_enddate`.
+Dates written as text ("2026-07-15", "15/07/2026") are read as dates. The hidden **Data check** (admin) shows exactly how every sheet was read.

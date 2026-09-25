@@ -65,7 +65,15 @@ function goTo(i) {
     else S.units = [a.su];
     adj.push('service unit ' + unitLabel(a.su));
   }
-  if (S.pipes.length && S.pipes.indexOf(a.pipe) < 0) {
+  if (S.owners.length && S.owners.indexOf(a.owner || '(none)') < 0) {
+    S.owners.push(a.owner || '(none)');
+    adj.push('owner');
+  }
+  if (!inDb(a)) {
+    S.db = 'pipeline';
+    adj.push('New DB → People pipeline');
+  }
+  if (loc.v === 1 && S.pipes.length && S.pipes.indexOf(a.pipe) < 0) {
     if (a.pipe) S.pipes.push(a.pipe);
     else S.pipes = [];
     adj.push('pipeline');
@@ -89,7 +97,7 @@ function goTo(i) {
   S.hl = { id: a.id, v: loc.v, key: loc.key };
   closePanel();
   closeDrawer();
-  S.cell = { key: loc.key };
+  S.sel = [loc.key];
   S.g = newGrid();
   renderAll();
   setTimeout(function () {

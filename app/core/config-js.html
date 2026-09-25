@@ -83,6 +83,11 @@ var S = {
   pipes: [1],
   view: 1,
   projMode: 'newest', // map 01 toggle, see PROJECT_MODES
+  db: 'pipeline', // 'pipeline' = everything, 'newdb' = only accounts validated on or after settings.newDbFrom
+  settings: { newDbFrom: '2026-07-01' }, // shared settings from the server (admin panel)
+  owners: [], // owners picked under the service units (empty = all owners)
+  sel: [], // selected matrix cells ("row§column"); their accounts are listed under the matrix
+  multiCell: false, // "select several" boxes in the matrix
   F: {},
   social: 'all',
   SF: {},

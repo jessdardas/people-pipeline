@@ -213,4 +213,68 @@ table.tb {
     overflow-wrap: anywhere;
   }
 }
+
+/* "Columns" button (outlined) */
+.btn.ghost {
+  background: var(--surface);
+  color: var(--text);
+  border: 1.5px solid var(--line);
+  padding: 5px 14px;
+}
+.btn.ghost:hover {
+  border-color: var(--text);
+  filter: none;
+}
+/* drag handle on the right edge of every column title */
+.rsz {
+  position: absolute;
+  top: 0;
+  right: -3px;
+  width: 7px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 2;
+}
+.rsz:hover {
+  background: rgba(0, 0, 0, 0.12);
+}
+/* Columns panel: show / name / order */
+.cpop {
+  right: 0;
+  top: 58px;
+  width: 340px;
+  max-height: 520px;
+}
+.cols-list {
+  overflow: auto;
+  padding: 4px 10px;
+}
+.colrow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 0;
+}
+.colrow .colname {
+  flex: 1;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  outline: none;
+}
+.colrow .colname:focus {
+  border-color: var(--text);
+}
+.colrow button {
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font-size: 12px;
+}
+.colrow button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
 </style>

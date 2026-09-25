@@ -11,7 +11,18 @@ function scopeText() {
         })
         .join(', ')
     : 'All pipelines';
-  return u + ' · ' + p;
+  var parts = [S.db === 'newdb' ? 'New DB (validated on or after ' + fmtXl(newDbSerial()) + ')' : '', u];
+  if (S.owners.length)
+    parts.push(
+      'Owner: ' +
+        S.owners
+          .map(function (o) {
+            return o === '(none)' ? 'no owner' : cap(o);
+          })
+          .join(', ')
+    );
+  if (S.view === 1) parts.push(p); // pipelines only apply to map 01
+  return parts.filter(Boolean).join(' · ');
 }
 
 function filterText() {
@@ -90,7 +101,11 @@ function render() {
     esc(scopeText()) +
     (ft ? ' · ' + esc(ft) : '') +
     '</div></div>' +
+    '<div class="hright">' +
     (S.view === 1 ? projModeHtml() : '') +
+    '<label class="multi" title="Tick, then click several boxes (or row / column titles) to list their accounts together"><input type="checkbox" ' +
+    (S.multiCell ? 'checked' : '') +
+    ' onchange="S.multiCell=this.checked">select several boxes</label></div>' +
     '</div>';
   if (!data.length) {
     main.innerHTML =
@@ -136,7 +151,15 @@ function render() {
     cols
       .map(function (c) {
         // every data column gets the same width; the label and Total columns only take what they need
-        return '<th class="col" style="width:' + (94 / cols.length).toFixed(2) + '%">' + esc(c.t) + '</th>';
+        return (
+          '<th class="col" style="width:' +
+          (94 / cols.length).toFixed(2) +
+          '%" onclick="selectLine(\'c\',\'' +
+          esc(String(c.k)) +
+          '\')" title="Select the whole column">' +
+          esc(c.t) +
+          '</th>'
+        );
       })
       .join('') +
     '<th class="tot">Total</th></tr></thead><tbody>';
@@ -144,7 +167,9 @@ function render() {
     h +=
       '<tr>' +
       (i === 0 ? '<th class="yl" rowspan="' + rows.length + '"><div>' + esc(def.y) + '</div></th>' : '') +
-      '<th class="row">' +
+      '<th class="row" onclick="selectLine(\'r\',\'' +
+      esc(String(rw.k)) +
+      '\')" title="Select the whole row">' +
       esc(rw.t) +
       (rw.s ? '<small>' + esc(rw.s) + '</small>' : '') +
       '</th>';
@@ -157,7 +182,7 @@ function render() {
         h += '<td class="c zero' + (hl ? ' hl' : '') + '" data-key="' + esc(key) + '">–</td>';
         return;
       }
-      var sel = S.cell && S.cell.key === key;
+      var sel = S.sel.indexOf(key) >= 0;
       h +=
         '<td class="c' +
         (sel ? ' sel' : '') +
@@ -199,20 +224,32 @@ function render() {
     (projects ? 'projects' : 'acc.') +
     '</td></tr>';
   h += '</tbody></table></div>';
-  if (S.cell && !cells[S.cell.key]) S.cell = null;
-  if (S.cell) {
-    var pk = S.cell.key.split('§'),
-      rw0 = rows.filter(function (x) {
-        return String(x.k) === pk[0];
-      })[0],
-      cl0 = cols.filter(function (x) {
-        return String(x.k) === pk[1];
-      })[0];
-    S.list = cells[S.cell.key].filter(function (a, i, all) {
-      return all.indexOf(a) === i; // an account with 2 projects in the same cell is listed once
+  S._cells = cells;
+  S.sel = S.sel.filter(function (k) {
+    return cells[k]; // boxes that no longer exist (other filter) are dropped
+  });
+  if (S.sel.length) {
+    var label = function (key) {
+      var pk = key.split('§'),
+        rw0 = rows.filter(function (x) {
+          return String(x.k) === pk[0];
+        })[0],
+        cl0 = cols.filter(function (x) {
+          return String(x.k) === pk[1];
+        })[0];
+      return (rw0 ? rw0.t : pk[0]) + ' × ' + (cl0 ? cl0.t : pk[1]);
+    };
+    var all = [];
+    S.sel.forEach(function (k) {
+      all = all.concat(cells[k]);
+    });
+    S.list = all.filter(function (a, i) {
+      return all.indexOf(a) === i; // an account in 2 selected boxes (or with 2 projects) is listed once
     });
     S.listMeta =
-      def.title + ' › ' + def.y + ': ' + (rw0 ? rw0.t : pk[0]) + ' × ' + def.x + ': ' + (cl0 ? cl0.t : pk[1]);
+      S.sel.length === 1
+        ? def.title + ' › ' + def.y + ': ' + label(S.sel[0]).replace(' × ', ' × ' + def.x + ': ')
+        : def.title + ' › ' + S.sel.length + ' boxes: ' + S.sel.map(label).join(' · ');
     h += listBlock(S.listMeta, true);
   } else if (S.view === 4) {
     S.list = data.slice();
@@ -220,6 +257,6 @@ function render() {
     h += listBlock('All accounts in this selection · click a number above to narrow the list', false);
   } else h += '<p class="hint">Click a number to see its accounts below.</p>';
   main.innerHTML = h;
-  if (S.list && (S.cell || S.view === 4)) renderList();
+  if (S.list && (S.sel.length || S.view === 4)) renderList();
 }
 </script>

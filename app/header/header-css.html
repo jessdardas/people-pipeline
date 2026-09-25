@@ -283,4 +283,50 @@
     margin-left: 0;
   }
 }
+
+/* People pipeline / New DB toggle next to the title (the .seg look is in matrix/matrix-css.html) */
+.db {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.db small {
+  color: var(--text-faint);
+  font-size: 11.5px;
+}
+
+/* owners of the chosen service unit(s) */
+.owners {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  background: var(--surface);
+  padding: 0 32px 12px;
+}
+.owners .olbl {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-right: 6px;
+}
+.owners button {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-soft);
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+}
+.owners button:hover {
+  color: var(--text);
+  border-color: var(--text-faint);
+}
+.owners button.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
 </style>

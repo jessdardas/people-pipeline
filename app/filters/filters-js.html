@@ -82,9 +82,23 @@ function socialMatch(a, skip) {
   });
 }
 
+/** New DB: only accounts validated on or after the date in the admin settings (people pipeline = everything). */
+function inDb(a) {
+  if (S.db !== 'newdb') return true;
+  return a.validDate != null && a.validDate >= newDbSerial();
+}
+
+function newDbSerial() {
+  var m = String(S.settings.newDbFrom || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) / 864e5 + 25569 : 0;
+}
+
 function pass(a, skip) {
   if (skip !== 'units' && S.units.length && S.units.indexOf(a.su) < 0) return false;
-  if (skip !== 'pipes' && S.pipes.length && S.pipes.indexOf(a.pipe) < 0) return false;
+  if (skip !== 'owners' && S.owners.length && S.owners.indexOf(a.owner || '(none)') < 0) return false;
+  // pipelines only count on map 01; the other maps always show every pipeline
+  if (skip !== 'pipes' && S.view === 1 && S.pipes.length && S.pipes.indexOf(a.pipe) < 0) return false;
+  if (skip !== 'db' && !inDb(a)) return false;
   for (var i = 0; i < FDEF.length; i++) {
     var f = FDEF[i];
     if (f.k === skip) continue;

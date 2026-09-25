@@ -20,6 +20,7 @@
   <?!= include('app/matrix/matrix-css'); ?>
   <?!= include('app/table/table-css'); ?>
   <?!= include('app/details/details-css'); ?>
+  <?!= include('app/admin/admin-css'); ?>
 </head>
 <body>
   <!-- Top of the page: logo, refresh info, search, service units, pipelines, tabs, filters -->
@@ -32,6 +33,9 @@
 
   <!-- Account details side panel -->
   <?!= include('app/details/details'); ?>
+
+  <!-- Hidden admin button (bottom right) + admin panel -->
+  <?!= include('app/admin/admin'); ?>
 
   <!-- Small message at the bottom of the screen (toast() in core/helpers-js.html) -->
   <div class="toast" id="toast"></div>
@@ -49,6 +53,7 @@
   <?!= include('app/details/details-js'); ?>
   <?!= include('app/search/search-js'); ?>
   <?!= include('app/export/export-js'); ?>
+  <?!= include('app/admin/admin-js'); ?>
   <?!= include('app/core/main-js'); ?>
 </body>
 </html>

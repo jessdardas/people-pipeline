@@ -171,17 +171,48 @@ function colVal(c, a) {
   return v === '' || v == null ? '(blank)' : String(v);
 }
 
+/**
+ * Click on a matrix box. Normally it shows only that box (click again to close);
+ * with "select several boxes" ticked, every click adds / removes a box.
+ */
 function openCell(rk, ck) {
-  var key = rk + '§' + ck;
-  if (S.cell && S.cell.key === key) {
-    S.cell = null;
-    S.g = newGrid();
-    render();
-    return;
-  }
-  S.cell = { key: key };
+  var key = rk + '§' + ck,
+    i = S.sel.indexOf(key);
+  if (S.multiCell) {
+    if (i >= 0) S.sel.splice(i, 1);
+    else S.sel.push(key);
+  } else S.sel = i >= 0 && S.sel.length === 1 ? [] : [key];
   S.g = newGrid();
   render();
+  scrollToList();
+}
+
+/** Click on a row title (kind 'r') or column title (kind 'c'): selects every box of that row / column. */
+function selectLine(kind, k) {
+  var keys = Object.keys(S._cells || {}).filter(function (key) {
+    var p = key.split('§');
+    return (kind === 'r' ? p[0] : p[1]) === String(k);
+  });
+  if (!keys.length) return;
+  var allOn = keys.every(function (key) {
+    return S.sel.indexOf(key) >= 0;
+  });
+  if (S.multiCell) {
+    if (allOn)
+      S.sel = S.sel.filter(function (key) {
+        return keys.indexOf(key) < 0;
+      });
+    else
+      keys.forEach(function (key) {
+        if (S.sel.indexOf(key) < 0) S.sel.push(key);
+      });
+  } else S.sel = allOn && S.sel.length === keys.length ? [] : keys;
+  S.g = newGrid();
+  render();
+  scrollToList();
+}
+
+function scrollToList() {
   var el = document.getElementById('inl');
   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -191,7 +222,7 @@ function newGrid() {
 }
 
 function closeCell() {
-  S.cell = null;
+  S.sel = [];
   S.g = newGrid();
   render();
 }
@@ -203,9 +234,9 @@ function listBlock(meta, closable) {
     '</div></div>' +
     '<div class="dtools"><input id="dSearch" placeholder="Search in this table…" value="' +
     esc(S.g.q) +
-    '" oninput="S.g.q=this.value;S.g.limit=100;renderList()"><button class="btn" onclick="exportList(\'xlsx\')">Excel</button><button class="btn" onclick="exportList(\'pdf\')">PDF</button>' +
+    '" oninput="S.g.q=this.value;S.g.limit=100;renderList()"><button class="btn ghost" onclick="toggleColPanel()" title="Show, hide, order and rename the columns">Columns</button><button class="btn" onclick="exportList(\'xlsx\')">Excel</button><button class="btn" onclick="exportList(\'pdf\')">PDF</button>' +
     (closable ? '<button class="x2" onclick="closeCell()" title="Close">×</button>' : '') +
-    '</div></div><div class="tw" id="tw"></div><div class="hpop" id="hpop"></div></div>'
+    '</div></div><div class="tw" id="tw"></div><div class="hpop" id="hpop"></div><div class="hpop cpop" id="cpop"></div></div>'
   );
 }
 
@@ -241,27 +272,35 @@ function shownList() {
 function renderList() {
   var box = document.getElementById('tw');
   if (!box) return;
-  var list = shownList();
+  var list = shownList(),
+    cols = visibleCols();
   S._shown = list;
   var c = document.getElementById('gCount');
   if (c) c.textContent = list.length.toLocaleString('en-GB') + ' account' + (list.length === 1 ? '' : 's');
   var h =
     '<table class="tb"><thead><tr><th class="cnt" title="Row number">#</th>' +
-    TCOLS.map(function (c) {
-      var f = S.g.cf[c.k] && S.g.cf[c.k].length,
-        so = S.g.sort.k === c.k;
-      return (
-        '<th class="' +
-        (so || f ? 's' : '') +
-        '" onclick="openHead(\'' +
-        c.k +
-        '\', this)">' +
-        esc(c.t) +
-        (so ? (S.g.sort.d > 0 ? ' ↑' : ' ↓') : '') +
-        (f ? ' <i class="fdot">●</i>' : '') +
-        '</th>'
-      );
-    }).join('') +
+    cols
+      .map(function (c) {
+        var f = S.g.cf[c.k] && S.g.cf[c.k].length,
+          so = S.g.sort.k === c.k,
+          w = TCFG.widths[c.k];
+        return (
+          '<th class="' +
+          (so || f ? 's' : '') +
+          '"' +
+          (w ? ' style="width:' + w + 'px"' : '') +
+          ' onclick="openHead(\'' +
+          c.k +
+          '\', this)">' +
+          esc(c.t) +
+          (so ? (S.g.sort.d > 0 ? ' ↑' : ' ↓') : '') +
+          (f ? ' <i class="fdot">●</i>' : '') +
+          '<span class="rsz" title="Drag to change the width" onmousedown="startResize(event,\'' +
+          c.k +
+          '\')" onclick="event.stopPropagation()"></span></th>'
+        );
+      })
+      .join('') +
     '</tr></thead><tbody>';
   list.slice(0, S.g.limit).forEach(function (a, n) {
     h +=
@@ -272,7 +311,7 @@ function renderList() {
       ')"><td class="cnt">' +
       (n + 1) +
       '</td>' +
-      TCOLS.map(function (c) {
+      cols.map(function (c) {
         var v = c.g(a);
         return (
           '<td class="' +
@@ -411,5 +450,147 @@ function closeHead() {
 // clicking anywhere else closes the column menu
 document.addEventListener('mousedown', function (e) {
   if (S.hk && !e.target.closest('#hpop') && !e.target.closest('.tb th')) closeHead();
+});
+
+/* ---------- which columns the table shows, their order, names and widths (saved in this browser) ---------- */
+var TCFG_KEY = 'pp_table_columns';
+var TCFG_DEFAULT = { order: [], hidden: { ind: 1 }, labels: {}, widths: {} }; // Industry hidden by default
+var TCFG = loadTcfg();
+
+function loadTcfg() {
+  try {
+    var v = JSON.parse(localStorage.getItem(TCFG_KEY) || 'null');
+    if (v && v.order) return v;
+  } catch (e) {}
+  return JSON.parse(JSON.stringify(TCFG_DEFAULT));
+}
+
+function saveTcfg() {
+  try {
+    localStorage.setItem(TCFG_KEY, JSON.stringify(TCFG));
+  } catch (e) {}
+}
+
+/** All columns in the chosen order (new columns go at the end), with the chosen names. */
+function orderedCols() {
+  var keys = TCFG.order.filter(function (k) {
+    return colDef(k);
+  });
+  TCOLS.forEach(function (c) {
+    if (keys.indexOf(c.k) < 0) keys.push(c.k);
+  });
+  return keys.map(function (k) {
+    var c = colDef(k);
+    return Object.assign({}, c, { t: TCFG.labels[k] || c.t, t0: c.t });
+  });
+}
+
+function visibleCols() {
+  return orderedCols().filter(function (c) {
+    return !TCFG.hidden[c.k];
+  });
+}
+
+function toggleColPanel() {
+  var p = document.getElementById('cpop');
+  if (p.classList.contains('open')) return p.classList.remove('open');
+  renderColPanel();
+  p.classList.add('open');
+}
+
+function renderColPanel() {
+  var p = document.getElementById('cpop'),
+    cols = orderedCols();
+  p.innerHTML =
+    '<div class="fp-t">Columns<span class="ml"></span><button class="lnk" onclick="resetCols()">Reset</button><button class="lnk" onclick="toggleColPanel()">Close</button></div>' +
+    '<div class="cols-list">' +
+    cols
+      .map(function (c, i) {
+        return (
+          '<div class="colrow"><input type="checkbox" title="Show / hide" ' +
+          (TCFG.hidden[c.k] ? '' : 'checked') +
+          ' onchange="colShow(\'' +
+          c.k +
+          '\', this.checked)"><input class="colname" value="' +
+          esc(c.t) +
+          '" title="Column name (original: ' +
+          esc(c.t0) +
+          ')" onchange="colRename(\'' +
+          c.k +
+          '\', this.value)"><button title="Move up" onclick="colMove(' +
+          i +
+          ',-1)"' +
+          (i ? '' : ' disabled') +
+          '>↑</button><button title="Move down" onclick="colMove(' +
+          i +
+          ',1)"' +
+          (i < cols.length - 1 ? '' : ' disabled') +
+          '>↓</button></div>'
+        );
+      })
+      .join('') +
+    '</div><p class="hint" style="margin:6px 14px 10px">Drag the edge of a column title to change its width. Saved in this browser.</p>';
+}
+
+function colShow(k, on) {
+  if (on) delete TCFG.hidden[k];
+  else TCFG.hidden[k] = 1;
+  saveTcfg();
+  renderList();
+}
+
+function colRename(k, v) {
+  v = String(v || '').trim();
+  if (v && v !== colDef(k).t) TCFG.labels[k] = v;
+  else delete TCFG.labels[k];
+  saveTcfg();
+  renderList();
+}
+
+function colMove(i, d) {
+  var keys = orderedCols().map(function (c) {
+    return c.k;
+  });
+  var j = i + d;
+  if (j < 0 || j >= keys.length) return;
+  keys.splice(j, 0, keys.splice(i, 1)[0]);
+  TCFG.order = keys;
+  saveTcfg();
+  renderList();
+  renderColPanel();
+}
+
+function resetCols() {
+  TCFG = JSON.parse(JSON.stringify(TCFG_DEFAULT));
+  saveTcfg();
+  renderList();
+  renderColPanel();
+}
+
+/** Drag the right edge of a column title to change its width. */
+function startResize(e, k) {
+  e.preventDefault();
+  e.stopPropagation();
+  var th = e.target.parentNode,
+    x0 = e.clientX,
+    w0 = th.getBoundingClientRect().width;
+  function move(ev) {
+    var w = Math.max(40, Math.round(w0 + ev.clientX - x0));
+    th.style.width = w + 'px';
+    TCFG.widths[k] = w;
+  }
+  function up() {
+    document.removeEventListener('mousemove', move);
+    document.removeEventListener('mouseup', up);
+    saveTcfg();
+  }
+  document.addEventListener('mousemove', move);
+  document.addEventListener('mouseup', up);
+}
+
+// clicking outside closes the Columns panel
+document.addEventListener('mousedown', function (e) {
+  var p = document.getElementById('cpop');
+  if (p && p.classList.contains('open') && !e.target.closest('#cpop') && !e.target.closest('.dtools')) p.classList.remove('open');
 });
 </script>

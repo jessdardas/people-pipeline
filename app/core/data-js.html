@@ -55,6 +55,7 @@ function daysFrom(dateKey, daysKey, a) {
 
 function build(d) {
   S.source = d.source || {};
+  if (d.settings) S.settings = d.settings;
   S.checked = Date.now();
   S.sheets = d.sheets;
   S.sheets.forEach(function (s, si) {
@@ -83,10 +84,16 @@ function build(d) {
     }
   });
   S.byId = {};
+  // "last validated": the validation end date column (validation_task_enddate), else any date column about validation
+  var vk = Object.keys(FIELD);
   S.validKey =
-    Object.keys(FIELD).filter(function (k) {
-      return /validat/.test(k);
-    })[0] || null;
+    vk.filter(function (k) {
+      return /validat/.test(k) && /enddate/.test(k);
+    })[0] ||
+    vk.filter(function (k) {
+      return /validat/.test(k) && /date|on$/.test(k);
+    })[0] ||
+    null;
   acc.forEach(function (a) {
     a.id = String(F(a, 'accountid') || '');
     a.name = String(F(a, 'name') == null ? '(no name)' : F(a, 'name'));
@@ -184,7 +191,8 @@ function build(d) {
       return co[x] - co[y];
     })
     .map(function (c) {
-      return { k: c, t: cap(c) };
+      // "No classification" only shows when the selection has accounts without a classification
+      return { k: c, t: cap(c), opt: c === 'no classification' ? 1 : 0 };
     });
   // units present in data
   var have = {};

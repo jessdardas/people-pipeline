@@ -142,7 +142,7 @@ function placesOf(def, a) {
 function setProjMode(m) {
   S.projMode = m;
   MAPS[1].x = 'Project phase (' + { newest: 'newest project', advanced: 'most advanced', all: 'every project' }[m] + ')';
-  S.cell = null;
+  S.sel = [];
   S.hl = null;
   S.g = newGrid();
   render();
