@@ -40,12 +40,12 @@ people pipeline.xlsx  ──►  server/Code.js + XlsxReader.js ── getData()
 
 | Map | Accounts | Rows | Columns |
 |---|---|---|---|
-| 01 Current pipeline | classification "current pipeline" | last meeting (< 6 mo, 6–12 mo, 1–2 yrs, > 2 yrs, never) | latest project phase P0–P5 |
+| 01 Current pipeline | classification "current pipeline" | account category | phases of its open projects (P0–P5), or "No open project" |
 | 02 Past clients | classification "past client" | last meeting in 3-month steps | last project (0–6, 6–12, 12–18, 18+ months) |
 | 03 No business | past demand, met in/out, contacted, not contacted | account category | classification |
 | All accounts | everyone | account category | classification |
 
-**Map 01 toggle** (`app/matrix/maps-js.html`, `setProjMode()`): when an account has several projects, its column is the phase of its **newest project** (latest date in one of `PROJECT_DATE_COLS`), its **most advanced phase**, or with **All projects** every project is counted in its own phase column (the numbers are then projects, and an account without projects counts once).
+**Map 01 – Current pipeline** (`app/matrix/maps-js.html`): rows = account category, columns = the phases of the account's **open** projects (status `statecodename` = Open, see `OPEN_STATUS`). An account with open projects in P1 and P3 appears in both columns, once each; without an open project it is in "No open project". Row, column and grand totals count every account once.
 
 **Drawing** (`app/matrix/matrix-js.html`, `render()`): counts the accounts per cell and colours each cell darker the more accounts it holds. Clicking a number opens the **account table** (`app/table/table-js.html`) for that cell, which you can sort, filter per column, search and export.
 

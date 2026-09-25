@@ -52,7 +52,6 @@ All paths are inside [`app/`](../app). The screenshots use made-up data.
 | 18 | Column totals row | `<main>` | `render()` | `matrix/matrix-css.html` → `.grid tr.sum` |
 | 19 | Total accounts on this map | `<main>` | `render()` | `matrix/matrix-css.html` → `.grid td.grand` |
 | 20 | "Click a number…" hint | `<main>` | `render()` | `core/base-css.html` → `.hint` |
-| 21 | Map 01 toggle: Newest project / Most advanced phase / All projects | `<main>` | `matrix/matrix-js.html` → `projModeHtml()`; a click calls `setProjMode()` in `matrix/maps-js.html`. The options are `PROJECT_MODES`, and the date that decides "newest" is `PROJECT_DATE_COLS`, both in `core/config-js.html`. How each account is placed: `MAPS[1].place()` / `places()` | `matrix/matrix-css.html` → `.pmode`, `.seg`, `.seg button.on` |
 
 Also in `<main>`:
 - **"Reading the source file…" while loading:** `app/index.html` (`.loading`, `.spinner`). Styled in `core/base-css.html`.

@@ -50,7 +50,7 @@ More in [docs/SETUP.md](docs/SETUP.md).
 | Lines in the account details overview | `openDetail()` in `app/details/details-js.html` |
 | Filters in the panel | `FDEF` in `app/filters/filters-js.html` |
 | Excel / PDF columns | `expRecord()` / `PDF_COLS` in `app/export/export-js.html` |
-| Map 01 toggle options / "newest" date column | `PROJECT_MODES` / `PROJECT_DATE_COLS` in `app/core/config-js.html` |
+| Map 01: which projects count as open | `OPEN_STATUS` in `app/core/config-js.html` |
 | Hourly refresh | `refreshData()` / `setupHourlyRefresh()` in `server/Code.js` (see docs/SETUP.md) |
 | How each Excel sheet is read / combined | `server/Pipeline.js` (see docs/HOW-IT-WORKS.md) |
 | New DB date (for everyone) | the hidden dot at the bottom right of the page (admin password) |
